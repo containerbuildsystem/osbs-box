@@ -1,0 +1,52 @@
+version: '2'
+
+services:
+
+    shared-data:
+        build: shared-data
+        hostname: shared-data
+
+    koji-db:
+        build: koji-db
+        hostname: koji-db
+        environment:
+            - POSTGRES_DB=koji
+            - POSTGRES_USER=koji
+            - POSTGRES_PASSWORD=mypassword
+
+    koji-hub:
+        build: hub
+        hostname: koji-hub
+        volumes_from:
+            - shared-data
+        # Need to export ports on workstation so it
+        # can be reached from Openshift's pods
+        ports:
+            - "80:80"
+            - "443:443"
+
+    koji-builder:
+        build: koji-builder
+        hostname: koji-builder
+        volumes_from:
+            - shared-data
+
+    koji-client:
+        build: client
+        hostname: koji-client
+        volumes_from:
+            - shared-data
+
+    openshift:
+        image: openshift/origin:v1.3.1
+        privileged: true
+        pid: host
+        network_mode: host
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:rw
+            - /sys:/sys
+            - /var/lib/docker:/var/lib/docker:rw
+            - /var/lib/origin/openshift.local.volumes:/var/lib/origin/openshift.local.volumes
+        command: start
+

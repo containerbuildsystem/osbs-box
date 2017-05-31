@@ -1,0 +1,23 @@
+# [eng-rhel-7]
+# name=ENG Internal - $releasever - $basearch
+# baseurl=TODO
+# enabled=1
+# gpgcheck=0
+#
+# [koji]
+# name=Koji Buildsystem for $releasever - $basearch
+# baseurl=TODO
+# enabled=1
+# gpgcheck=0
+#
+# [koji-noarch]
+# name=Koji Buildsystem for $releasever - noarch
+# baseurl=TODO
+# enabled=1
+# gpgcheck=0
+#
+# [ose-3.2]
+# name=OpenShift Enterprise 3.2
+# baseurl=TODO
+# gpgcheck=0
+# enabled=1
