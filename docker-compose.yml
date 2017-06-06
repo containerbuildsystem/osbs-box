@@ -49,4 +49,3 @@ services:
             - /var/lib/docker:/var/lib/docker:rw
             - /var/lib/origin/openshift.local.volumes:/var/lib/origin/openshift.local.volumes
         command: start
-

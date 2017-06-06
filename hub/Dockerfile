@@ -1,12 +1,10 @@
-FROM centos:7
+FROM fedora:25
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
 EXPOSE 80 443
 
-COPY yum.repos.d/ /etc/yum.repos.d/
-
 RUN \
-    yum -y install \
+    dnf -y install \
         hostname \
         httpd \
         koji-containerbuild-hub \
@@ -17,7 +15,7 @@ RUN \
         mod_auth_kerb \
         mod_ssl \
         mod_wsgi \
-    && yum clean all
+    && dnf clean all
 
 COPY etc/ /etc/
 COPY bin/ /usr/local/bin/

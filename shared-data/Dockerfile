@@ -1,4 +1,4 @@
-FROM centos:7
+FROM fedora:25
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
 VOLUME [\
@@ -9,14 +9,12 @@ VOLUME [\
 
 EXPOSE 80
 
-COPY yum.repos.d/ /etc/yum.repos.d/
-
 RUN \
-    yum -y install \
-		openssl \
-		hostname \
+    dnf -y install \
+        openssl \
+        hostname \
         httpd \
-    && yum clean all
+    && dnf clean all
 
 ADD opt/ /opt/
 ADD etc/ /etc/
