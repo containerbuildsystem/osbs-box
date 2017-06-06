@@ -1,14 +1,12 @@
-FROM centos:7
+FROM fedora:25
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
-COPY yum.repos.d/ /etc/yum.repos.d/
-
 RUN \
-    yum install -y \
+    dnf install -y \
     atomic-openshift-clients \
     iproute \
     koji-containerbuild-cli \
-    && yum clean all
+    && dnf clean all
 
 ADD bin/ /usr/local/bin/
 
