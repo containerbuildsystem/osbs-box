@@ -1,13 +1,10 @@
 #!/bin/bash
 set -xeuo pipefail
 
-if [ ! -e "/docker-init" ]
+if [ ! -e "/opt/osbs/hub-init" ]
 then
-    # Use kojiadmin user by default
-    mkdir -p /root/.koji
-    ln -fs /opt/koji-clients/kojiadmin/config /root/.koji/config
-
-    touch /docker-init
+    . /usr/local/bin/setup.sh
+    touch /opt/osbs/hub-init
 fi
 
 for ip in `hostname -I`;

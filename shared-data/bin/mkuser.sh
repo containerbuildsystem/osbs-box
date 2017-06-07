@@ -62,14 +62,14 @@ cp /opt/local/pki/koji/koji_ca_cert.crt $client/serverca.crt
 # Generate user config
 cat << EOF > $client/config
 [koji]
-server = https://${IP}/kojihub
+server = https://${IP}:8083/kojihub
 authtype = ssl
 cert = ${client_shared}/client.crt
 ca = ${client_shared}/clientca.crt
 serverca = ${client_shared}/serverca.crt
 
 [koji-containerbuild]
-server = https://${IP}/kojihub
+server = https://${IP}:8083/kojihub
 authtype = ssl
 cert = ${client_shared}/client.crt
 ca = ${client_shared}/clientca.crt
