@@ -10,6 +10,7 @@ RUN \
         python-osbs-client \
         python-hashlib \
         python-pip \
+        findutils \
     && dnf clean all
 
 ADD etc/ /etc/
