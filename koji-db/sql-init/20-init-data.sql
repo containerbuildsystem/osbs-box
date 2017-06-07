@@ -12,3 +12,7 @@ INSERT INTO user_perms (user_id, perm_id, creator_id) (
         'kojiadmin'
     ) AND permissions.name = 'admin'
 );
+
+/* Enable content generator */
+INSERT INTO content_generator VALUES
+    (1, 'atomic-reactor');

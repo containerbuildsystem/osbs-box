@@ -22,8 +22,8 @@ services:
         # Need to export ports on workstation so it
         # can be reached from Openshift's pods
         ports:
-            - "80:80"
-            - "443:443"
+            - "8080:8080"
+            - "8083:8083"
 
     koji-builder:
         build: koji-builder
@@ -36,16 +36,3 @@ services:
         hostname: koji-client
         volumes_from:
             - shared-data
-
-    openshift:
-        image: openshift/origin:v1.3.1
-        privileged: true
-        pid: host
-        network_mode: host
-        volumes:
-            - /:/rootfs:ro
-            - /var/run:/var/run:rw
-            - /sys:/sys
-            - /var/lib/docker:/var/lib/docker:rw
-            - /var/lib/origin/openshift.local.volumes:/var/lib/origin/openshift.local.volumes
-        command: start

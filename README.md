@@ -23,13 +23,17 @@ Additional components:
 ### Koji DB
 https://docs.pagure.org/koji/server_howto/#postgresql-server
 
-### Openshift
-https://docs.openshift.org/latest/getting_started/administrators.html#running-in-a-docker-container
+## Openshift
+A working OpenShift cluster is needed for full functionality.
+It's recommended to set one up via
+[`oc cluster up`](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
 
-Uses workstation's network.
-Access console via https://localhost:8443
+See Getting Started section below for commands.
+
+Once configured, console can be accessed via https://localhost:8443
 Username: osbs
 Password: osbs
+Namespace: osbs
 
 ### Shared Data
 A data volume container used to store shared data between
@@ -47,6 +51,12 @@ Combination of client tools used to interact with other services
 ## Getting Started
 
 ```
+# Setup OpenShift locally
+oc cluster up --version v1.4.1
+oc login -u system:admin
+# Ok to do this even before namespace is created
+oc -n osbs adm policy add-cluster-role-to-user cluster-admin osbs
+
 # Build all images
 docker-compose build
 
@@ -67,7 +77,11 @@ docker-compose down
 ```
 # On client container
 koji-containerbuild container-build candidate \
-    git://my-git-registry.com/my-git-repo#4c16bf82213a94fb576cefe996fe70c5e384282f
+    git://github.com/lcarva/docker-hello-world#3ddf64777f335788145a097dee8a14ea0d494742
+
+# Or from the host (useful for retaining bash history between runs)
+docker exec -it osbsbox_koji-client_1 koji-containerbuild container-build candidate \
+    git://github.com/lcarva/docker-hello-world#3ddf64777f335788145a097dee8a14ea0d494742
 ```
 
 ## Using Koji CLI
@@ -108,7 +122,7 @@ web interface. http://172.19.0.6/kojifiles displays a directly listing of
 #### Unable to look up hostnames
 OpenShift build may fail with an error like this:
 
-`fatal: Unable to look up my-git-registry.com (port 9418) (Name or service not known)`
+`fatal: Unable to look up github.com (port 9418) (Name or service not known)`
 
 This seems to be due to docker not watching for iptables changes, to resolve:
 
@@ -118,4 +132,3 @@ sudo iptables -F
 sudo iptables -t nat -F
 sudo systemctl start docker
 ```
-

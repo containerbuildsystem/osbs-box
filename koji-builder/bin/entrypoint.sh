@@ -14,10 +14,12 @@ while true; do
 done
 set -xe
 
-if [ ! -e "/docker-init" ]
+if [ ! -e "/opt/osbs/builder-init" ]
 then
     prepare_builder.sh
-    touch /docker-init
+    touch /opt/osbs/builder-init
 fi
+
+ln -f -s /opt/osbs/osbs.conf /etc/osbs.conf
 
 exec "$@"

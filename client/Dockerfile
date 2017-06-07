@@ -3,9 +3,9 @@ MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
 RUN \
     dnf install -y \
-    atomic-openshift-clients \
-    iproute \
-    koji-containerbuild-cli \
+      origin-clients \
+      iproute \
+      koji-containerbuild-cli \
     && dnf clean all
 
 ADD bin/ /usr/local/bin/
