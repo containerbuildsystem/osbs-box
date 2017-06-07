@@ -17,4 +17,4 @@ ADD bin/ /usr/local/bin/
 RUN chmod +x /usr/local/bin/*
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["/usr/sbin/kojid", "-f", "--force-lock"]
+CMD ["/usr/sbin/kojid", "-d", "-v", "-f", "--force-lock"]
