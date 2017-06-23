@@ -1,10 +1,19 @@
 version: '2'
 
+volumes:
+    osbsbox-osbs:
+    osbsbox-koji-config:
+    osbsbox-koji-certs:
+
 services:
 
     shared-data:
         build: shared-data
         hostname: shared-data
+        volumes:
+            - osbsbox-osbs:/opt/osbs
+            - osbsbox-koji-config:/opt/koji-clients
+            - osbsbox-koji-certs:/etc/pki/koji
 
     koji-db:
         build: koji-db
