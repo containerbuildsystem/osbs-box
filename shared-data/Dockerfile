@@ -9,7 +9,7 @@ VOLUME [\
 
 EXPOSE 80
 
-RUN \
+RUN dnf update -y && \
     dnf -y install \
         openssl \
         hostname \

@@ -1,7 +1,7 @@
 FROM fedora:25
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
-RUN \
+RUN dnf update -y && \
     dnf -y install --nogpgcheck \
         mock \
         koji-builder \
