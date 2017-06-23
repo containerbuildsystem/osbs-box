@@ -1,7 +1,8 @@
 #!/bin/python3
 import argparse
 import re
-from subprocess import check_output, CalledProcessError, Popen, PIPE
+import os
+from subprocess import check_output, CalledProcessError, Popen, PIPE, STDOUT
 from time import sleep
 
 
@@ -11,6 +12,9 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
     if show_print:
         print("Running '%s'" % cmd)
     try:
+        kwargs = {}
+        if show_print:
+            kwargs = {'stdout': STDOUT}
         output = check_output(cmd, shell=True)
         if show_print:
             print(output.decode('utf-8'))
@@ -24,8 +28,10 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
 
 
 def _wait_until_container_is_up(container):
+    dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+    dir_path = dir_path.replace('-', '')
     container_is_up = True
-    cmd = ["docker", "inspect", "osbsbox_{}_1".format(container),
+    cmd = ["docker", "inspect", "{0}_{1}_1".format(dir_path, container),
            "--format='{{.State.Running}}'"]
     for attempts in range(0, 10):
         try:
@@ -89,11 +95,13 @@ def up(args):
     # Wait for container to appear
     _wait_until_container_is_up('koji-client')
 
-    # check that init is complet
-    cmd = ["docker", "logs", "-f", "osbsbox_koji-client_1"]
+    # check that init is complete
+    dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+    dir_path = dir_path.replace('-', '')
+    cmd = ["docker", "logs", "-f", "{}_koji-client_1".format(dir_path)]
     process = Popen(cmd, stdout=PIPE, stderr=PIPE)
     for line in iter(process.stderr.readline, ''):
-        if 'exec sleep' in line.decode('utf-8'):
+        if 'exec sleep infinity' in line.decode('utf-8'):
             print("Client is up")
             break
 
