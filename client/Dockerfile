@@ -9,6 +9,7 @@ RUN \
     && dnf clean all
 
 ADD bin/ /usr/local/bin/
+ADD configs/ /configs
 
 RUN chmod +x /usr/local/bin/*
 

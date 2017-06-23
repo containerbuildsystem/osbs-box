@@ -7,6 +7,7 @@ koji add-tag dest --arches=x86_64
 koji add-target candidate build dest
 
 koji add-pkg dest osbs-buildroot-docker --owner kojiadmin
+koji add-pkg dest docker-hello-world --owner kojiadmin
 
 # Enable content generator access
 koji grant_cg_access kojiadmin atomic-reactor
@@ -47,3 +48,40 @@ rules:
 EOF
 
 oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespace osbs
+
+oc new-project worker
+oc adm policy add-role-to-user edit -z builder
+
+oc secret new kojisecret \
+    serverca=/opt/koji-clients/kojiadmin/serverca.crt \
+    ca=/opt/koji-clients/kojiadmin/clientca.crt \
+    cert=/opt/koji-clients/kojiadmin/client.crt
+
+oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
+
+oc create policybinding worker
+
+oc create -f - << EOF
+apiVersion: v1
+kind: Role
+metadata:
+  name: osbs-custom-build
+rules:
+- verbs:
+  - create
+  resources:
+  - builds/custom
+EOF
+
+oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespace worker
+
+token=$(oc whoami -t)
+
+cp /configs/reactor-config-secret.yml /tmp/config.yaml
+cp /configs/client-config-secret.conf /tmp/osbs.conf
+sed -i "s/OSBS_TOKEN/${token}/" /tmp/osbs.conf
+sed -i "s/KOJI_HUB_IP/${WORKSTATION_IP}/" /tmp/osbs.conf
+
+oc project osbs
+oc create secret generic client-config-secret --from-file=/tmp/osbs.conf
+oc create secret generic reactor-config-secret --from-file=/tmp/config.yaml
