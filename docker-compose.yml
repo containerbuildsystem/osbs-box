@@ -8,7 +8,10 @@ volumes:
 services:
 
     shared-data:
-        build: shared-data
+        build:
+          context: shared-data
+          args:
+            UPDATES_TESTING: 1
         hostname: shared-data
         volumes:
             - osbsbox-osbs:/opt/osbs
@@ -24,7 +27,10 @@ services:
             - POSTGRES_PASSWORD=mypassword
 
     koji-hub:
-        build: hub
+        build:
+          context: hub
+          args:
+            UPDATES_TESTING: 1
         hostname: koji-hub
         volumes_from:
             - shared-data
@@ -35,13 +41,19 @@ services:
             - "8083:8083"
 
     koji-builder:
-        build: koji-builder
+        build:
+          context: koji-builder
+          args:
+            UPDATES_TESTING: 1
         hostname: koji-builder
         volumes_from:
             - shared-data
 
     koji-client:
-        build: client
+        build:
+          context: client
+          args:
+            UPDATES_TESTING: 1
         hostname: koji-client
         volumes_from:
             - shared-data
