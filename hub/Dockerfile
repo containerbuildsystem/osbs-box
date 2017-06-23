@@ -3,7 +3,7 @@ MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
 EXPOSE 80 443
 
-RUN \
+RUN dnf update -y && \
     dnf -y install \
         hostname \
         httpd \
