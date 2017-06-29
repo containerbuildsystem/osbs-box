@@ -4,6 +4,7 @@ volumes:
     osbsbox-osbs:
     osbsbox-koji-config:
     osbsbox-koji-certs:
+    osbsbox-registry-auth:
 
 services:
 
@@ -17,6 +18,8 @@ services:
             - osbsbox-osbs:/opt/osbs
             - osbsbox-koji-config:/opt/koji-clients
             - osbsbox-koji-certs:/etc/pki/koji
+            - osbsbox-registry-auth:/auth
+            - ./certs:/certs
 
     koji-db:
         build: koji-db
@@ -57,3 +60,16 @@ services:
         hostname: koji-client
         volumes_from:
             - shared-data
+
+    registry:
+      image: registry:2
+      ports:
+        - 5000:5000
+      environment:
+        REGISTRY_HTTP_TLS_CERTIFICATE: /certs/domain.crt
+        REGISTRY_HTTP_TLS_KEY: /certs/domain.key
+        REGISTRY_AUTH: htpasswd
+        REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+        REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      volumes_from:
+        - shared-data

@@ -113,6 +113,8 @@ def up(args):
 
     print("osbs-box is up")
 
+    print("make sure registry certificate from ./certs is copied to "
+          "/etc/docker/certs.d/172.17.0.1:5000/ca.crt")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

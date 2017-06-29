@@ -41,3 +41,12 @@ chown -R nobody:nobody /opt/local/koji-clients
 # Enable kojiadmin config for root user
 mkdir -p /root/.koji
 ln -s /opt/local/koji-clients/kojiadmin/config /root/.koji/config
+
+# Generate certificates and set password for registry
+mkdir /opt/local/certs
+openssl req \
+    -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=172.17.0.1" \
+    -newkey rsa:4096 -nodes -sha256 -keyout /opt/local/certs/domain.key \
+    -x509 -days 365 -out /opt/local/certs/domain.crt
+mkdir /opt/local/auth
+htpasswd -Bbn osbs craycray > /opt/local/auth/htpasswd

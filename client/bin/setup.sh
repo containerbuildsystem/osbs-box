@@ -49,6 +49,8 @@ EOF
 
 oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespace osbs
 
+oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
+
 oc new-project worker
 oc adm policy add-role-to-user edit -z builder
 
@@ -74,6 +76,8 @@ rules:
 EOF
 
 oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespace worker
+
+oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
 
 token=$(oc whoami -t)
 
