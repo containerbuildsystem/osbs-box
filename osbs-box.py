@@ -13,9 +13,9 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
         print("Running '%s'" % cmd)
     try:
         kwargs = {}
-        if show_print:
-            kwargs = {'stdout': STDOUT}
-        output = check_output(cmd, shell=True)
+        if not show_print:
+            kwargs = {'stderr': STDOUT}
+        output = check_output(cmd, shell=True, **kwargs)
         if show_print:
             print(output.decode('utf-8'))
         return output
