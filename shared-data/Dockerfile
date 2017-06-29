@@ -5,6 +5,8 @@ VOLUME [\
     "/opt/osbs", \
     "/opt/koji-clients", \
     "/etc/pki/koji"\
+    "/certs"\
+    "/auth"\
 ]
 
 EXPOSE 80
@@ -18,6 +20,7 @@ RUN dnf update -y && dnf install -y dnf-plugins-core && \
         openssl \
         hostname \
         httpd \
+        httpd-tools \
     && dnf clean all
 
 ADD opt/ /opt/

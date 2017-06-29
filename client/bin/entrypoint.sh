@@ -29,5 +29,6 @@ sed --follow-symlinks -i "s/OSBS_TOKEN/${token}/" /etc/osbs.conf
 # Use workstation's IP so it's reachable from within openshift's pods
 sed --follow-symlinks -i "s/KOJI_HUB_IP/${WORKSTATION_IP}/" /etc/osbs.conf
 sed --follow-symlinks -i "s/OPENSHIFT_IP/${WORKSTATION_IP}/" /etc/osbs.conf
+sed --follow-symlinks -i "s/REGISTRY_IP/${WORKSTATION_IP}/" /etc/osbs.conf
 
 exec "$@"
