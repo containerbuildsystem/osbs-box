@@ -84,6 +84,8 @@ def up(args):
 
     # Build containers
     cmd = ["docker-compose", "build"]
+    if args.force_rebuild:
+        cmd += ["--no-cache"]
     _run(cmd)
 
     # Start docker-compose
@@ -120,6 +122,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parse_action = parser.add_argument("action", choices=['up', 'down', 'cleanup'])
     parse_action = parser.add_argument("--no-cleanup", action="store_true")
+    parse_action = parser.add_argument("--force-rebuild", action="store_true")
     parsed = parser.parse_args()
 
     {
