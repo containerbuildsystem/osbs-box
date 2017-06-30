@@ -23,7 +23,7 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
         if ignore_exitcode:
             return
         else:
-            print(e.stdout.decode('utf-8'))
+            print(e.output.decode('utf-8'))
             raise
 
 
