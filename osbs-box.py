@@ -6,6 +6,9 @@ from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 from time import sleep
 from textwrap import dedent
 
+DIRECTORIES = ['client', 'hub', 'koji-builder', 'shared-data']
+SERVICES = ['shared-data', 'koji-hub', 'koji-builder', 'koji-client']
+
 
 def _run(cmd, ignore_exitcode=False, show_print=True):
     if isinstance(cmd, list):
@@ -97,14 +100,24 @@ def up(args):
            "add-cluster-role-to-user", "cluster-admin", "osbs"]
     _run(cmd)
 
+    # Copy distro-specific Dockerfile
+    filename = "Dockerfile.{}".format(args.distro)
+    for directory in DIRECTORIES:
+        src_filepath = os.path.abspath('/'.join([directory, filename]))
+        destfilepath = os.path.abspath('/'.join([directory, 'Dockerfile']))
+        cmd = ["cp", "-rvf", src_filepath, destfilepath]
+        _run(cmd)
+
     # Build containers
     cmd = ["docker-compose", "build"]
     if args.force_rebuild:
         cmd += ["--no-cache"]
     if args.updates:
         cmd += ["--build-arg", "UPDATES=1"]
+    if args.repo_url:
+        cmd += ["--build-arg", "REPO_URL={0}".format(args.repo_url)]
 
-    for service in ['shared-data', 'koji-hub', 'koji-builder', 'koji-client']:
+    for service in SERVICES:
         _run(cmd + [service])
 
     # Start docker-compose
@@ -149,6 +162,7 @@ def up(args):
     print("make sure registry certificate from ./certs is copied to "
           "/etc/docker/certs.d/172.17.0.1:5000/ca.crt")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
@@ -176,7 +190,17 @@ if __name__ == "__main__":
     )
     parse_up.add_argument(
         "--updates", action="store_true",
-        help="Update packages")
+        help="Update packages"
+    )
+    parse_up.add_argument(
+        "--distro", choices=['fedora', 'rhel7'], default='fedora',
+        help="Select a base distro")
+    parse_up.add_argument(
+        "--repo-url",
+        help="URL of the additional repo file to install"
+    )
+
+    parsed = parser.parse_args()
 
     parsed = parser.parse_args()
     parsed.func(parsed)

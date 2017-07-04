@@ -1,1 +1,5 @@
 certs/
+client/Dockerfile
+hub/Dockerfile
+koji-builder/Dockerfile
+shared-data/Dockerfile
