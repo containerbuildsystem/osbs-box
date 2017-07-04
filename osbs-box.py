@@ -2,7 +2,7 @@
 import argparse
 import re
 import os
-from subprocess import check_output, CalledProcessError, Popen, PIPE, STDOUT
+from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 from time import sleep
 
 
@@ -15,9 +15,20 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
         kwargs = {}
         if not show_print:
             kwargs = {'stderr': STDOUT}
-        output = check_output(cmd, shell=True, **kwargs)
-        if show_print:
-            print(output.decode('utf-8'))
+
+        output = ''
+        proc = Popen(cmd, stdout=PIPE, shell=True, **kwargs)
+        while True:
+            line = proc.stdout.readline()
+            if line != b'':
+                decoded_line = line.rstrip().decode('utf-8')
+                if show_print:
+                    print(decoded_line)
+                output += decoded_line
+            else:
+                break
+        # Print an additional empty line
+        print()
         return output
     except CalledProcessError as e:
         if ignore_exitcode:
@@ -67,11 +78,11 @@ def up(args):
     cmd = ['oc', 'cluster', 'up',
            '--version', 'v1.5.1']
     output = _run(cmd)
-    match = re.search(b'Using (\d*.\d*.\d*.\d*) as the server IP', output)
+    match = re.search(r'Using (\d*.\d*.\d*.\d*) as the server IP', output)
     if not match:
         raise RuntimeError("Failed to find openshift IP in output:\n%s" % output)
 
-    openshift_ip = match.group(1).decode('utf-8')
+    openshift_ip = match.group(1)
 
     # login
     cmd = ["oc", "login", "-u", "system:admin", "https://{}:8443".format(openshift_ip)]
