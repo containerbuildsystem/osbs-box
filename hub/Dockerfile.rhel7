@@ -1,17 +1,14 @@
-FROM fedora:25
+FROM rhel7:latest
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
 EXPOSE 80 443
 
+ARG REPO_URL
 ARG UPDATES
-ARG UPDATES_TESTING
 
-RUN if [ $UPDATES ]; then dnf update -y; fi && \
-    if [ $UPDATES_TESTING ]; then \
-            dnf install -y dnf-plugins-core && \
-            dnf config-manager --set-enable updates-testing &&\
-            dnf -y update; fi && \
-    dnf -y install \
+ADD ${REPO_URL} /etc/yum.repos.d/internal.repo
+RUN if [ $UPDATES ]; then yum update -y; fi && \
+    yum install -y \
         hostname \
         httpd \
         koji-containerbuild-hub \
@@ -22,7 +19,7 @@ RUN if [ $UPDATES ]; then dnf update -y; fi && \
         mod_auth_kerb \
         mod_ssl \
         mod_wsgi \
-    && dnf clean all
+    && yum clean all
 
 COPY etc/ /etc/
 COPY bin/ /usr/local/bin/

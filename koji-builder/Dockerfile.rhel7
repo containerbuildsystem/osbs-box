@@ -1,0 +1,25 @@
+FROM rhel7:latest
+MAINTAINER Luiz Carvalho <lucarval@redhat.com>
+
+ARG REPO_URL
+ARG UPDATES
+
+ADD ${REPO_URL} /etc/yum.repos.d/internal.repo
+RUN if [ $UPDATES ]; then yum update -y; fi && \
+    yum install -y \
+        mock \
+        koji-builder \
+        koji-containerbuild-builder \
+        osbs-client \
+        python-osbs-client \
+        python-hashlib \
+        python-pip \
+        findutils \
+    && yum clean all
+
+ADD etc/ /etc/
+ADD bin/ /usr/local/bin/
+RUN chmod +x /usr/local/bin/*
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/usr/sbin/init"]
