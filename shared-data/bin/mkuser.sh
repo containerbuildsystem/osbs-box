@@ -67,6 +67,8 @@ authtype = ssl
 cert = ${client_shared}/client.crt
 ca = ${client_shared}/clientca.crt
 serverca = ${client_shared}/serverca.crt
+weburl = http://KOJI_IP/koji
+topurl = http://KOJI_IP/kojifiles
 
 [koji-containerbuild]
 server = https://${IP}:8083/kojihub
@@ -74,6 +76,8 @@ authtype = ssl
 cert = ${client_shared}/client.crt
 ca = ${client_shared}/clientca.crt
 serverca = ${client_shared}/serverca.crt
+weburl = http://KOJI_IP/koji
+topurl = http://KOJI_IP/kojifiles
 EOF
 
 popd > /dev/null
