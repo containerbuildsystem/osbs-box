@@ -31,4 +31,9 @@ sed --follow-symlinks -i "s/KOJI_HUB_IP/${WORKSTATION_IP}/" /etc/osbs.conf
 sed --follow-symlinks -i "s/OPENSHIFT_IP/${WORKSTATION_IP}/" /etc/osbs.conf
 sed --follow-symlinks -i "s/REGISTRY_IP/${WORKSTATION_IP}/" /etc/osbs.conf
 
+# Use internal koji IP when displaying koji task link
+# For some reason koji is not listening
+KOJI_IP=$(getent hosts koji-hub | awk '{ print $1 }')
+sed --follow-symlinks -i "s/KOJI_IP/${KOJI_IP}/" /root/.koji/config
+
 exec "$@"
