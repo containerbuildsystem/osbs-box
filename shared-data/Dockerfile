@@ -4,8 +4,8 @@ MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 VOLUME [\
     "/opt/osbs", \
     "/opt/koji-clients", \
-    "/etc/pki/koji"\
-    "/certs"\
+    "/etc/pki/koji", \
+    "/certs", \
     "/auth"\
 ]
 
