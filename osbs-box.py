@@ -65,7 +65,8 @@ def up(args):
 
     # Start a cluster
     cmd = ['oc', 'cluster', 'up',
-           '--version', 'v1.5.1']
+           '--version', 'v1.5.1',
+           '--image', 'openshift/origin']
     output = _run(cmd)
     match = re.search(b'Using (\d*.\d*.\d*.\d*) as the server IP', output)
     if not match:
