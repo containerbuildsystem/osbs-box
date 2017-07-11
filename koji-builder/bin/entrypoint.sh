@@ -22,4 +22,5 @@ fi
 
 ln -f -s /opt/osbs/osbs.conf /etc/osbs.conf
 
+systemctl enable kojid
 exec "$@"
