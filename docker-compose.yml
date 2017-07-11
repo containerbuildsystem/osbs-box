@@ -51,6 +51,11 @@ services:
         hostname: koji-builder
         volumes_from:
             - shared-data
+        volumes:
+            - /sys/fs/cgroup:/sys/fs/cgroup:ro
+        tmpfs:
+            - /run
+            - /tmp
 
     koji-client:
         build:
