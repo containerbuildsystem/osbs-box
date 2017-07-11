@@ -99,14 +99,26 @@ def up(args):
     _wait_until_container_is_up('koji-client')
 
     # check that init is complete
+    client_logs = ''
+    client_initialized = False
     dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
     dir_path = dir_path.replace('-', '')
     cmd = ["docker", "logs", "-f", "{}_koji-client_1".format(dir_path)]
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    for line in iter(process.stderr.readline, ''):
-        if 'exec sleep infinity' in line.decode('utf-8'):
-            print("Client is up")
+    process = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+    while not process.poll():
+        line = process.stdout.readline()
+        if not line:
             break
+        decoded_line = line.decode('utf-8')
+        client_logs += decoded_line
+        if 'exec sleep infinity' in decoded_line:
+            print("Client is up")
+            client_initialized = True
+            break
+
+    if not client_initialized:
+        print(client_logs)
+        raise RuntimeError("Client failed to start")
 
     # Check that other containers are running
     print("Checking that other containers are running")
