@@ -33,7 +33,17 @@ oc secret new kojisecret \
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
-oc create policybinding osbs
+# RHEL 7 has outdated oc, so use a fallback method
+#oc create policybinding osbs
+oc create -f - << EOF
+apiVersion: v1
+kind: PolicyBinding
+metadata:
+  name: osbs:default
+policyRef:
+  name: default
+  namespace: osbs
+EOF
 
 oc create -f - << EOF
 apiVersion: v1
@@ -61,7 +71,17 @@ oc secret new kojisecret \
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
-oc create policybinding worker
+# RHEL 7 has outdated oc, so use a fallback method
+#oc create policybinding worer
+oc create -f - << EOF
+apiVersion: v1
+kind: PolicyBinding
+metadata:
+  name: worker:default
+policyRef:
+  name: default
+  namespace: worker
+EOF
 
 oc create -f - << EOF
 apiVersion: v1
