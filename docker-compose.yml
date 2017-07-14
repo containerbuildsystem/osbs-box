@@ -19,7 +19,7 @@ services:
             - osbsbox-koji-config:/opt/koji-clients
             - osbsbox-koji-certs:/etc/pki/koji
             - osbsbox-registry-auth:/auth
-            - ./certs:/certs
+            - ./certs:/certs:z
 
     koji-db:
         build: koji-db
