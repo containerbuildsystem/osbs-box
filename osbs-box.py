@@ -11,31 +11,33 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
         cmd = " ".join(cmd)
     if show_print:
         print("Running '%s'" % cmd)
-    try:
-        kwargs = {}
-        if not show_print:
-            kwargs = {'stderr': STDOUT}
+    kwargs = {}
+    if not show_print:
+        kwargs = {'stderr': STDOUT}
 
-        output = ''
-        proc = Popen(cmd, stdout=PIPE, shell=True, **kwargs)
-        while True:
-            line = proc.stdout.readline()
-            if line != b'':
-                decoded_line = line.rstrip().decode('utf-8')
-                if show_print:
-                    print(decoded_line)
-                output += decoded_line
-            else:
-                break
-        # Print an additional empty line
-        print()
-        return output
-    except CalledProcessError as e:
-        if ignore_exitcode:
-            return
+    output = ''
+    proc = Popen(cmd, stdout=PIPE, shell=True, **kwargs)
+    while True:
+        line = proc.stdout.readline()
+        if line != b'':
+            decoded_line = line.rstrip().decode('utf-8')
+            if show_print:
+                print(decoded_line)
+            output += decoded_line
         else:
-            print(e.output.decode('utf-8'))
-            raise
+            break
+    # Run poll to set returncode
+    proc.wait()
+    if not ignore_exitcode and proc.returncode != 0:
+        # If the command has failed and lines were hidden before now's the time 
+        # to print them
+        if not show_print:
+            print(output)
+        raise RuntimeError('Command {0} failed with exitcode {1}'.format(
+            cmd, proc.returncode))
+    # Print an additional empty line
+    print()
+    return output
 
 
 def _wait_until_container_is_up(container):
