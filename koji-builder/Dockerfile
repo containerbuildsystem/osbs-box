@@ -1,12 +1,15 @@
 FROM fedora:25
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
+ARG UPDATES
 ARG UPDATES_TESTING
 
-RUN dnf update -y && dnf install -y dnf-plugins-core && \
-    if [ $UPDATES_TESTING ]; then dnf config-manager --set-enable updates-testing; fi && \
-    dnf -y update && \
-    dnf -y install --nogpgcheck \
+RUN if [ $UPDATES ]; then dnf update -y; fi && \
+    if [ $UPDATES_TESTING ]; then \
+            dnf install -y dnf-plugins-core && \
+            dnf config-manager --set-enable updates-testing &&\
+            dnf -y update; fi && \
+    dnf -y install \
         mock \
         koji-builder \
         koji-containerbuild-builder \

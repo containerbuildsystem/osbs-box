@@ -11,11 +11,14 @@ VOLUME [\
 
 EXPOSE 80
 
+ARG UPDATES
 ARG UPDATES_TESTING
 
-RUN dnf update -y && dnf install -y dnf-plugins-core && \
-    if [ $UPDATES_TESTING ]; then dnf config-manager --set-enable updates-testing; fi && \
-    dnf -y update && \
+RUN if [ $UPDATES ]; then dnf update -y; fi && \
+    if [ $UPDATES_TESTING ]; then \
+            dnf install -y dnf-plugins-core && \
+            dnf config-manager --set-enable updates-testing &&\
+            dnf -y update; fi && \
     dnf -y install \
         openssl \
         hostname \
