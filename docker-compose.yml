@@ -11,8 +11,9 @@ services:
     shared-data:
         build:
           context: shared-data
-          args:
-            UPDATES_TESTING: 1
+        # Uncomment to use packages from updates-testing repo
+        #   args:
+        #     UPDATES_TESTING: 1
         hostname: shared-data
         volumes:
             - osbsbox-osbs:/opt/osbs
@@ -32,8 +33,9 @@ services:
     koji-hub:
         build:
           context: hub
-          args:
-            UPDATES_TESTING: 1
+        # Uncomment to use packages from updates-testing repo
+        #   args:
+        #     UPDATES_TESTING: 1
         hostname: koji-hub
         volumes_from:
             - shared-data
@@ -46,8 +48,9 @@ services:
     koji-builder:
         build:
           context: koji-builder
-          args:
-            UPDATES_TESTING: 1
+        # Uncomment to use packages from updates-testing repo
+        #   args:
+        #     UPDATES_TESTING: 1
         hostname: koji-builder
         volumes_from:
             - shared-data
@@ -60,8 +63,9 @@ services:
     koji-client:
         build:
           context: client
-          args:
-            UPDATES_TESTING: 1
+        # Uncomment to use packages from updates-testing repo
+        #   args:
+        #     UPDATES_TESTING: 1
         hostname: koji-client
         volumes_from:
             - shared-data

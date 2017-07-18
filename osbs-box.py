@@ -101,7 +101,11 @@ def up(args):
     cmd = ["docker-compose", "build"]
     if args.force_rebuild:
         cmd += ["--no-cache"]
-    _run(cmd)
+    if args.updates:
+        cmd += ["--build-arg", "UPDATES=1"]
+
+    for service in ['shared-data', 'koji-hub', 'koji-builder', 'koji-client']:
+        _run(cmd + [service])
 
     # Start docker-compose
     cmd = ["docker-compose", "up", "-d"]
@@ -170,6 +174,9 @@ if __name__ == "__main__":
         "--force-rebuild", action="store_true",
         help="Force image rebuild"
     )
+    parse_up.add_argument(
+        "--updates", action="store_true",
+        help="Update packages")
 
     parsed = parser.parse_args()
     parsed.func(parsed)
