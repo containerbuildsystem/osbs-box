@@ -1,14 +1,8 @@
-FROM rhel7:latest
-MAINTAINER Luiz Carvalho <lucarval@redhat.com>
+FROM osbs-box:rhel7
 
 EXPOSE 80 443
 
-ARG REPO_URL
-ARG UPDATES
-
-ADD ${REPO_URL} /etc/yum.repos.d/internal.repo
-RUN if [ $UPDATES ]; then yum update -y; fi && \
-    yum install -y \
+RUN yum install -y \
         hostname \
         httpd \
         koji-containerbuild-hub \

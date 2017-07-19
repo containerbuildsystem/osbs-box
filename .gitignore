@@ -1,4 +1,5 @@
 certs/
+base/Dockerfile
 client/Dockerfile
 hub/Dockerfile
 koji-builder/Dockerfile

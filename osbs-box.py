@@ -6,7 +6,8 @@ from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 from time import sleep
 from textwrap import dedent
 
-DIRECTORIES = ['client', 'hub', 'koji-builder', 'shared-data']
+BASEIMAGE = 'osbs-box'
+DIRECTORIES = ['base', 'client', 'hub', 'koji-builder', 'shared-data']
 SERVICES = ['shared-data', 'koji-hub', 'koji-builder', 'koji-client']
 
 
@@ -109,14 +110,18 @@ def up(args):
         _run(cmd)
 
     # Build containers
-    cmd = ["docker-compose", "build"]
+    cmd = ["docker", "build"]
     if args.force_rebuild:
         cmd += ["--no-cache"]
     if args.updates:
         cmd += ["--build-arg", "UPDATES=1"]
+    if args.updates_testing:
+        cmd += ["--build-arg", "UPDATES_TESTING=1"]
     if args.repo_url:
         cmd += ["--build-arg", "REPO_URL={0}".format(args.repo_url)]
+    _run(cmd + ['-t', '{0}:{1}'.format(BASEIMAGE, args.distro), 'base'])
 
+    cmd = ["docker-compose", "build"]
     for service in SERVICES:
         _run(cmd + [service])
 
@@ -193,14 +198,17 @@ if __name__ == "__main__":
         help="Update packages"
     )
     parse_up.add_argument(
+        "--updates-testing", action="store_true",
+        help="Enable updates-testing repo and update packages"
+    )
+    parse_up.add_argument(
         "--distro", choices=['fedora', 'rhel7'], default='fedora',
-        help="Select a base distro")
+        help="Select a base distro"
+    )
     parse_up.add_argument(
         "--repo-url",
         help="URL of the additional repo file to install"
     )
-
-    parsed = parser.parse_args()
 
     parsed = parser.parse_args()
     parsed.func(parsed)
