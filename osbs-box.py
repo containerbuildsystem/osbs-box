@@ -4,6 +4,7 @@ import re
 import os
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 from time import sleep
+from textwrap import dedent
 
 
 def _run(cmd, ignore_exitcode=False, show_print=True):
@@ -29,7 +30,7 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
     # Run poll to set returncode
     proc.wait()
     if not ignore_exitcode and proc.returncode != 0:
-        # If the command has failed and lines were hidden before now's the time 
+        # If the command has failed and lines were hidden before now's the time
         # to print them
         if not show_print:
             print(output)
@@ -145,14 +146,30 @@ def up(args):
           "/etc/docker/certs.d/172.17.0.1:5000/ca.crt")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parse_action = parser.add_argument("action", choices=['up', 'down', 'cleanup'])
-    parse_action = parser.add_argument("--no-cleanup", action="store_true")
-    parse_action = parser.add_argument("--force-rebuild", action="store_true")
-    parsed = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=dedent(
+            """\
+            Setup a new OSBS instance using docker-compose.
+            It includes Openshift cluster, Koji and docker registry
+            """)
+    )
+    subparsers = parser.add_subparsers(title='subcommands', help='action to execute')
+    parse_up = subparsers.add_parser('up', help='start a new osbs-box')
+    parse_up.set_defaults(func=up)
+    parse_down = subparsers.add_parser('down', help='destroy existing osbs-box')
+    parse_down.set_defaults(func=down)
+    parse_cleanup = subparsers.add_parser('cleanup', help='remove configuration volumes')
+    parse_cleanup.set_defaults(func=cleanup)
 
-    {
-        'up': up,
-        'down': down,
-        'cleanup': cleanup,
-    }[parsed.action](parsed)
+    parse_up.add_argument(
+        "--no-cleanup", action="store_true",
+        help="Don't remove existing volumes when starting a new box"
+    )
+    parse_up.add_argument(
+        "--force-rebuild", action="store_true",
+        help="Force image rebuild"
+    )
+
+    parsed = parser.parse_args()
+    parsed.func(parsed)
