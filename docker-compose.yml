@@ -42,6 +42,7 @@ services:
     koji-builder:
         build:
           context: koji-builder
+        privileged: true
         hostname: koji-builder
         volumes_from:
             - shared-data
