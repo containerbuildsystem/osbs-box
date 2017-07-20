@@ -7,8 +7,8 @@ from time import sleep
 from textwrap import dedent
 
 BASEIMAGE = 'osbs-box'
-DIRECTORIES = ['base', 'client', 'hub', 'koji-builder', 'shared-data']
-SERVICES = ['shared-data', 'koji-hub', 'koji-builder', 'koji-client']
+DIRECTORIES = ['base', 'client', 'koji-db', 'hub', 'koji-builder', 'shared-data']
+SERVICES = ['shared-data', 'koji-db', 'koji-hub', 'koji-builder', 'koji-client']
 
 
 def _run(cmd, ignore_exitcode=False, show_print=True):
