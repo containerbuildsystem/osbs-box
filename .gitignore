@@ -2,5 +2,6 @@ certs/
 base/Dockerfile
 client/Dockerfile
 hub/Dockerfile
+koji-db/Dockerfile
 koji-builder/Dockerfile
 shared-data/Dockerfile
