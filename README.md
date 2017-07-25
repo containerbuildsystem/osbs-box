@@ -2,6 +2,37 @@
 
 A set of containers that emulate a OSBS deployment.
 
+## Getting Started
+
+```
+# Start osbs-box
+python ./osbs-box.py up
+
+# Check status
+python ./osbs-box.py status
+
+# Destroy osbs-box box
+python ./osbs-box down
+
+# Rebuild existing container images with updates enabled
+python ./osbs-box up --force-rebuild --updates
+
+# Build a RHEL7-based images
+python ./osbs-box up --distro rhel7 --repo-url=...
+```
+
+## Submitting Builds
+
+```
+# On client container
+koji-containerbuild container-build candidate \
+    git://github.com/lcarva/docker-hello-world#3ddf64777f335788145a097dee8a14ea0d494742
+
+# Or from the host (useful for retaining bash history between runs)
+docker exec -it osbsbox_koji-client_1 koji-containerbuild container-build candidate \
+    git://github.com/lcarva/docker-hello-world#3ddf64777f335788145a097dee8a14ea0d494742
+```
+
 ## Containers
 
 ### Koji Hub
@@ -47,42 +78,6 @@ Combination of client tools used to interact with other services
 * koji-cli
 * koji-containerbuild-cli
 
-
-## Getting Started
-
-```
-# Setup OpenShift locally
-oc cluster up --version v1.4.1
-oc login -u system:admin
-# Ok to do this even before namespace is created
-oc -n osbs adm policy add-cluster-role-to-user cluster-admin osbs
-
-# Build all images
-docker-compose build
-
-# Start all containers in foreground
-docker-compose up (Use -d for detached mode)
-
-# Wait for client container to start
-
-# Attach to client container
-docker exec -it osbsbox_koji-client_1 bash
-
-# Stop and remove all containers
-docker-compose down
-```
-
-## Submitting Builds
-
-```
-# On client container
-koji-containerbuild container-build candidate \
-    git://github.com/lcarva/docker-hello-world#3ddf64777f335788145a097dee8a14ea0d494742
-
-# Or from the host (useful for retaining bash history between runs)
-docker exec -it osbsbox_koji-client_1 koji-containerbuild container-build candidate \
-    git://github.com/lcarva/docker-hello-world#3ddf64777f335788145a097dee8a14ea0d494742
-```
 
 ## Using Koji CLI
 
