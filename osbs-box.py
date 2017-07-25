@@ -9,6 +9,7 @@ from textwrap import dedent
 BASEIMAGE = 'osbs-box'
 DIRECTORIES = ['base', 'client', 'koji-db', 'hub', 'koji-builder', 'shared-data']
 SERVICES = ['shared-data', 'koji-db', 'koji-hub', 'koji-builder', 'koji-client']
+dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__))).replace('-', '')
 
 
 def _run(cmd, ignore_exitcode=False, show_print=True):
@@ -16,19 +17,16 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
         cmd = " ".join(cmd)
     if show_print:
         print("Running '%s'" % cmd)
-    kwargs = {}
-    if not show_print:
-        kwargs = {'stderr': STDOUT}
 
     output = ''
-    proc = Popen(cmd, stdout=PIPE, shell=True, **kwargs)
+    proc = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=True)
     while True:
         line = proc.stdout.readline()
         if line != b'':
             decoded_line = line.rstrip().decode('utf-8')
             if show_print:
                 print(decoded_line)
-            output += decoded_line
+            output += decoded_line + '\n'
         else:
             break
     # Run poll to set returncode
@@ -41,13 +39,12 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
         raise RuntimeError('Command {0} failed with exitcode {1}'.format(
             cmd, proc.returncode))
     # Print an additional empty line
-    print()
-    return output
+    if show_print:
+        print()
+    return output.strip()
 
 
 def _wait_until_container_is_up(container):
-    dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
-    dir_path = dir_path.replace('-', '')
     container_is_up = True
     cmd = ["docker", "inspect", "{0}_{1}_1".format(dir_path, container),
            "--format='{{.State.Running}}'"]
@@ -137,8 +134,6 @@ def up(args):
     # check that init is complete
     client_logs = ''
     client_initialized = False
-    dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
-    dir_path = dir_path.replace('-', '')
     cmd = ["docker", "logs", "-f", "{}_koji-client_1".format(dir_path)]
     process = Popen(cmd, stdout=PIPE, stderr=STDOUT)
     while not process.poll():
@@ -168,6 +163,46 @@ def up(args):
           "/etc/docker/certs.d/172.17.0.1:5000/ca.crt")
 
 
+def status(args):
+    # Show Openshift cluster
+    try:
+        output = _run(["oc", "cluster", "status"], show_print=False)
+        match = re.search("(https://.*)\n", output)
+        if match:
+            print("Openshift URL: {}".format(match.group(1)))
+            print("Credentials: osbs/osbs")
+            print("Namespaces: 'osbs' for orchestration builds, 'worker' for worker builds")
+        else:
+            print("Failed to find Openshift URL in the output")
+    except RuntimeError:
+        print("Openshift is not running")
+    print()
+
+    # Show Koji details
+    try:
+        cmd = ["docker", "logs", "{}_koji-hub_1".format(dir_path)]
+        output = _run(cmd, show_print=False)
+        match = re.search("(http.*/koji)\n(http.*/kojifiles)\n", output)
+        if match:
+            print('Koji hub URL: {}'.format(match.group(1)))
+            print('Koji files URL: {}'.format(match.group(2)))
+        else:
+            print("Failed to find Koji Hub URL in the output")
+    except RuntimeError:
+        pass
+    print()
+
+    # Show container status
+    for service in SERVICES:
+        cmd = ["docker", "inspect", "{0}_{1}_1".format(dir_path, service),
+               "--format='{{.State.Status}}'"]
+        try:
+            status = _run(cmd, show_print=False)
+        except RuntimeError:
+            status = "not found"
+        print("{0}: {1}".format(service, status.strip()))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
@@ -184,6 +219,8 @@ if __name__ == "__main__":
     parse_down.set_defaults(func=down)
     parse_cleanup = subparsers.add_parser('cleanup', help='remove configuration volumes')
     parse_cleanup.set_defaults(func=cleanup)
+    parse_status = subparsers.add_parser('status', help='show openshift, koji and container status')
+    parse_status.set_defaults(func=status)
 
     parse_up.add_argument(
         "--no-cleanup", action="store_true",
