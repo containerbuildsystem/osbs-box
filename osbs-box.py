@@ -46,8 +46,8 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
 
 def _wait_until_container_is_up(container):
     container_is_up = True
-    cmd = ["docker", "inspect", "{0}_{1}_1".format(dir_path, container),
-           "--format='{{.State.Running}}'"]
+    cmd = ["docker", "inspect", "--format='{{.State.Running}}'",
+           "{0}_{1}_1".format(dir_path, container)]
     for attempts in range(0, 10):
         try:
             output = _run(cmd, show_print=False)
