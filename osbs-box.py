@@ -194,8 +194,9 @@ def status(args):
 
     # Show container status
     for service in SERVICES:
-        cmd = ["docker", "inspect", "{0}_{1}_1".format(dir_path, service),
-               "--format='{{.State.Status}}'"]
+        cmd = ["docker", "inspect", "--format='{{.State.Status}}'",
+               "{0}_{1}_1".format(dir_path, service)
+               ]
         try:
             status = _run(cmd, show_print=False)
         except RuntimeError:
