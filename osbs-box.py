@@ -60,6 +60,27 @@ def _wait_until_container_is_up(container):
     assert container_is_up
 
 
+def _wait_until_string_is_in_logs(container, str_to_find):
+    container_logs = ''
+    container_initialized = False
+    cmd = ["docker", "logs", "-f", container]
+    process = Popen(cmd, stdout=PIPE, stderr=STDOUT)
+    while not process.poll():
+        line = process.stdout.readline()
+        if not line:
+            break
+        decoded_line = line.decode('utf-8')
+        container_logs += decoded_line
+        if str_to_find in decoded_line:
+            print("Container %s is up" % container)
+            container_initialized = True
+            break
+
+    if not container_initialized:
+        print(container_logs)
+        raise RuntimeError("%s failed to start", container)
+
+
 def down(args, delete_volumes=False):
     print("osbs-box: down")
     cmd = ['docker-compose', 'down']
@@ -130,33 +151,16 @@ def up(args):
 
     # Wait for container to appear
     _wait_until_container_is_up('koji-client')
-
-    # check that init is complete
-    client_logs = ''
-    client_initialized = False
-    cmd = ["docker", "logs", "-f", "{}_koji-client_1".format(dir_path)]
-    process = Popen(cmd, stdout=PIPE, stderr=STDOUT)
-    while not process.poll():
-        line = process.stdout.readline()
-        if not line:
-            break
-        decoded_line = line.decode('utf-8')
-        client_logs += decoded_line
-        if 'exec sleep infinity' in decoded_line:
-            print("Client is up")
-            client_initialized = True
-            break
-
-    if not client_initialized:
-        print(client_logs)
-        raise RuntimeError("Client failed to start")
+    _wait_until_string_is_in_logs("{}_koji-client_1".format(dir_path),
+                                  "exec sleep infinity")
 
     # Check that other containers are running
     print("Checking that other containers are running")
     _wait_until_container_is_up('koji-db')
     _wait_until_container_is_up('koji-hub')
     _wait_until_container_is_up('koji-builder')
-
+    _wait_until_string_is_in_logs("{}_koji-builder_1".format(dir_path),
+                                  "exec /usr/sbin/init")
     print("osbs-box is up")
 
     print("make sure registry certificate from ./certs is copied to "
