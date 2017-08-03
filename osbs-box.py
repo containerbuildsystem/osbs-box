@@ -9,6 +9,7 @@ from textwrap import dedent
 BASEIMAGE = 'osbs-box'
 DIRECTORIES = ['base', 'client', 'koji-db', 'hub', 'koji-builder', 'shared-data']
 SERVICES = ['shared-data', 'koji-db', 'koji-hub', 'koji-builder', 'koji-client']
+WEB_CONF = 'hub/etc/kojiweb/web.conf'
 dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__))).replace('-', '')
 
 
@@ -58,6 +59,19 @@ def _wait_until_container_is_up(container):
             sleep(1)
 
     assert container_is_up
+
+
+def _get_koji_urls():
+    '''
+    returns (hub_url, file_url)
+    '''
+    cmd = ["docker", "logs", "{}_koji-hub_1".format(dir_path)]
+    output = _run(cmd, show_print=False)
+    match = re.search("(http.*/koji)\n(http.*/kojifiles)\n", output)
+    if match:
+        return (match.group(1), match.group(2))
+    else:
+        raise Exception("Could not find koji urls in docker logs output")
 
 
 def down(args, delete_volumes=False):
@@ -157,6 +171,16 @@ def up(args):
     _wait_until_container_is_up('koji-hub')
     _wait_until_container_is_up('koji-builder')
 
+    # Finalize config files
+    hub_url, file_url = _get_koji_urls()
+    with open(WEB_CONF, 'r') as web_conf:
+        lines = web_conf.readlines()
+    with open(WEB_CONF, 'w') as web_conf:
+        for line in lines:
+            line = re.sub(r'http:\/\/koji-hub\/kojihub', hub_url, line)
+            line = re.sub(r'http:\/\/koji-hub\/kojifiles', file_url, line)
+            web_conf.write(line)
+
     print("osbs-box is up")
 
     print("make sure registry certificate from ./certs is copied to "
@@ -180,16 +204,13 @@ def status(args):
 
     # Show Koji details
     try:
-        cmd = ["docker", "logs", "{}_koji-hub_1".format(dir_path)]
-        output = _run(cmd, show_print=False)
-        match = re.search("(http.*/koji)\n(http.*/kojifiles)\n", output)
-        if match:
-            print('Koji hub URL: {}'.format(match.group(1)))
-            print('Koji files URL: {}'.format(match.group(2)))
-        else:
-            print("Failed to find Koji Hub URL in the output")
+        hub_url, file_url = _get_koji_urls()
+        print('Koji hub URL: {}'.format(hub_url))
+        print('Koji files URL: {}'.format(file_url))
     except RuntimeError:
         pass
+    except Exception as e:
+        print(str(e))
     print()
 
     # Show container status
