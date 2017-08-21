@@ -34,7 +34,7 @@ services:
         # Need to export ports on workstation so it
         # can be reached from Openshift's pods
         ports:
-            - "8080:8080"
+            - "8080:80"
             - "8083:8083"
 
     koji-builder:
