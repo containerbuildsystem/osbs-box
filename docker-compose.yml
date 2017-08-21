@@ -4,6 +4,7 @@ volumes:
     osbsbox-osbs:
     osbsbox-koji-config:
     osbsbox-registry-auth:
+    osbsbox-koji-data:
 
 services:
 
@@ -13,6 +14,7 @@ services:
         hostname: shared-data
         volumes:
             - osbsbox-osbs:/opt/osbs
+            - osbsbox-koji-data:/mnt/koji
             - osbsbox-koji-config:/opt/koji-clients
             - osbsbox-registry-auth:/auth
             - ./ssl:/etc/pki/osbs-box:z
