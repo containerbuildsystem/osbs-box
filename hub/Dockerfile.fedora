@@ -13,6 +13,7 @@ RUN dnf -y --refresh install \
         mod_auth_kerb \
         mod_ssl \
         mod_wsgi \
+        python-requests \
     && dnf clean all
 
 COPY etc/ /etc/

@@ -13,6 +13,7 @@ RUN yum install -y \
         mod_auth_kerb \
         mod_ssl \
         mod_wsgi \
+        python-requests \
     && yum clean all
 
 COPY etc/ /etc/
