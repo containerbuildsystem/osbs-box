@@ -87,11 +87,8 @@ oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespac
 
 oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
 
-token=$(oc whoami -t)
-
 cp /configs/reactor-config-secret.yml /tmp/config.yaml
 cp /configs/client-config-secret.conf /tmp/osbs.conf
-sed -i "s/OSBS_TOKEN/${token}/" /tmp/osbs.conf
 sed -i "s/KOJI_HUB_IP/${WORKSTATION_IP}/" /tmp/osbs.conf
 
 oc project osbs
