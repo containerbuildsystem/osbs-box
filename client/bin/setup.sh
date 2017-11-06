@@ -1,19 +1,11 @@
 #!/bin/bash
 set -xeuo pipefail
 
-# Koji CLI in RHEL7 has a nasty bug - it attempts to verify that user is 
-# package owner before auth procedure
-# Lets quickly patch it
-
-sed -i "s;if not options\.owner;activate_session(session)\n    if not options\.owner;" /usr/bin/koji
-sed -i -e '701d;' /usr/bin/koji
-
 # TODO: Just create directly in DB?
 koji add-tag build --arches=x86_64
 koji add-tag dest --arches=x86_64
 koji add-target candidate build dest
 
-#sleep infinity
 koji add-pkg dest osbs-buildroot-docker --owner kojiadmin
 koji add-pkg dest docker-hello-world --owner kojiadmin
 
