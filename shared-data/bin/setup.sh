@@ -36,6 +36,7 @@ popd > /dev/null
 mkuser.sh kojiweb
 mkuser.sh kojibuilder
 mkuser.sh kojiadmin
+mkuser.sh kojiosbs
 chown -R nobody:nobody /opt/local/koji-clients
 
 # Enable kojiadmin config for root user

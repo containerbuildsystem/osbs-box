@@ -3,7 +3,8 @@
 
 /* Create users */
 INSERT INTO users (name, status, usertype) VALUES
-    ('kojiadmin', 0, 0);
+    ('kojiadmin', 0, 0),
+    ('kojiosbs', 0, 0);
 
 /* Make some users admin */
 INSERT INTO user_perms (user_id, perm_id, creator_id) (

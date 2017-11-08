@@ -10,7 +10,7 @@ koji add-pkg dest osbs-buildroot-docker --owner kojiadmin
 koji add-pkg dest docker-hello-world --owner kojiadmin
 
 # Enable content generator access
-koji grant_cg_access kojiadmin atomic-reactor
+koji grant_cg_access kojiosbs atomic-reactor
 # TODO: Create a channel
 
 WORKSTATION_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
@@ -27,9 +27,9 @@ oc new-project osbs
 oc adm policy add-role-to-user edit -z builder
 
 oc secret new kojisecret \
-    serverca=/opt/koji-clients/kojiadmin/serverca.crt \
-    ca=/opt/koji-clients/kojiadmin/clientca.crt \
-    cert=/opt/koji-clients/kojiadmin/client.crt
+    serverca=/opt/koji-clients/kojiosbs/serverca.crt \
+    ca=/opt/koji-clients/kojiosbs/clientca.crt \
+    cert=/opt/koji-clients/kojiosbs/client.crt
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
@@ -55,9 +55,9 @@ oc new-project worker
 oc adm policy add-role-to-user edit -z builder
 
 oc secret new kojisecret \
-    serverca=/opt/koji-clients/kojiadmin/serverca.crt \
-    ca=/opt/koji-clients/kojiadmin/clientca.crt \
-    cert=/opt/koji-clients/kojiadmin/client.crt
+    serverca=/opt/koji-clients/kojiosbs/serverca.crt \
+    ca=/opt/koji-clients/kojiosbs/clientca.crt \
+    cert=/opt/koji-clients/kojiosbs/client.crt
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
