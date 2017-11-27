@@ -56,6 +56,9 @@ services:
         build:
           context: client
         hostname: koji-client
+        privileged: true
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
         volumes_from:
             - shared-data
 
