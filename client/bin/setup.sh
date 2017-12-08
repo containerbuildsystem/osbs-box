@@ -33,21 +33,7 @@ oc secret new kojisecret \
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
-oc create policybinding osbs
-
-oc create -f - << EOF
-apiVersion: v1
-kind: Role
-metadata:
-  name: osbs-custom-build
-rules:
-- verbs:
-  - create
-  resources:
-  - builds/custom
-EOF
-
-oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespace osbs
+oc adm policy add-role-to-user system:build-strategy-custom -z builder -n osbs
 
 oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
 
@@ -61,21 +47,7 @@ oc secret new kojisecret \
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
-oc create policybinding worker
-
-oc create -f - << EOF
-apiVersion: v1
-kind: Role
-metadata:
-  name: osbs-custom-build
-rules:
-- verbs:
-  - create
-  resources:
-  - builds/custom
-EOF
-
-oc adm policy add-role-to-user osbs-custom-build osbs -z builder --role-namespace worker
+oc adm policy add-role-to-user system:build-strategy-custom -z builder -n worker
 
 oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
 
