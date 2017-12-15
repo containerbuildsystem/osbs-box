@@ -13,7 +13,7 @@ koji add-pkg dest docker-hello-world --owner kojiadmin
 koji grant_cg_access kojiosbs atomic-reactor
 # TODO: Create a channel
 
-WORKSTATION_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
+WORKSTATION_IP='172.17.0.1'
 oc login --insecure-skip-tls-verify=true -u osbs -p osbs https://${WORKSTATION_IP}:8443/
 # Some of the commands below require user to be a cluster admin
 # In the future, this project should provide an ansible playbook

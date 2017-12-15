@@ -21,6 +21,7 @@ conf=confs/ca.cnf
 cp ssl.cnf $conf
 
 openssl genrsa -out private/koji_ca_cert.key 2048
+sed -i "s/email\:move/DNS.1:koji-hub,DNS.2:172.17.0.1/" $conf
 openssl req -config $conf -new -x509 \
     -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=koji-hub" \
     -days 3650 \
