@@ -99,6 +99,12 @@ def up(args):
         cleanup(args)
     print("osbs-box: up")
 
+    if not os.path.exists('ssl'):
+        print("Generating certificates")
+        _run(['./generate-certs'])
+    else:
+        print("Reusing existing certificates")
+
     # Start a cluster
     cmd = ['oc', 'cluster', 'up',
            '--version', 'v3.6.0',
