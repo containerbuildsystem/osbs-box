@@ -1,0 +1,101 @@
+#!/bin/bash
+set -xeuo pipefail
+
+KOJI_HUB_IP="$(docker network inspect -f "{{range .IPAM.Config }}{{ .Gateway }}{{end}}" bridge)"
+WORK_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+OUTPUT_DIR="${WORK_DIR}/ssl"
+BASE_SSL_CONF="${WORK_DIR}/base-ssl.cnf"
+
+mkdir -p "${OUTPUT_DIR}"/{certs,private,confs}
+
+mkuser() {
+
+    # If you change your certificate authority name to
+    # something else you will need to change the caname
+    # value to reflect the change.
+    caname="koji"
+
+    user=$1
+    password="mypassword"
+    conf=confs/${user}-ssl.cnf
+
+    openssl genrsa -out private/${user}.key 2048
+    cp ${BASE_SSL_CONF} ${conf}
+
+    openssl req -config ${conf} -new -nodes \
+        -out certs/${user}.csr \
+        -key private/${user}.key \
+        -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=${user}/emailAddress=${user}@kojihub.local"
+
+    openssl ca -config ${conf} -batch \
+        -keyfile private/${caname}_ca_cert.key \
+        -cert certs/${caname}_ca_cert.crt \
+        -out certs/${user}-crtonly.crt \
+        -outdir certs \
+        -infiles certs/${user}.csr
+
+    openssl pkcs12 -export \
+        -inkey private/${user}.key \
+        -passout "pass:${password}" \
+        -in certs/${user}-crtonly.crt \
+        -certfile certs/${caname}_ca_cert.crt \
+        -CAfile certs/${caname}_ca_cert.crt \
+        -chain -clcerts \
+        -out certs/${user}_browser_cert.p12
+
+    openssl pkcs12 -clcerts \
+        -passin "pass:${password}" \
+        -passout "pass:${password}" \
+        -in certs/${user}_browser_cert.p12 \
+        -inkey private/${user}.key \
+        -out certs/${user}.pem
+
+    cat certs/${user}-crtonly.crt private/${user}.key > certs/${user}.crt
+}
+
+
+pushd ${OUTPUT_DIR} > /dev/null
+
+touch index.txt
+echo 01 > serial
+
+# Generate certificates for koji-hub - it's also the root
+# CA for all other certs
+conf=confs/ca.cnf
+cp ${BASE_SSL_CONF} ${conf}
+
+openssl genrsa -out private/koji_ca_cert.key 2048
+
+sed -i "s/email\:move/DNS.1:koji-hub,DNS.2:${KOJI_HUB_IP}/" ${conf}
+openssl req -config ${conf} -new -x509 \
+    -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=koji-hub" \
+    -days 3650 \
+    -key private/koji_ca_cert.key \
+    -out certs/koji_ca_cert.crt \
+    -extensions v3_ca
+
+cp private/koji_ca_cert.key private/kojihub.key
+cp certs/koji_ca_cert.crt certs/kojihub.crt
+
+# Generate user certificates
+mkuser kojiweb
+mkuser kojibuilder
+mkuser kojiadmin
+mkuser kojiosbs
+
+# Generate certificates for container registry
+registry_conf=confs/registry.cnf
+cp ${BASE_SSL_CONF} ${registry_conf}
+sed -i 's/email\:move/DNS.1:172.17.0.1,IP:172.17.0.1/' ${registry_conf}
+
+openssl req -config ${registry_conf} -x509 \
+    -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=172.17.0.1" \
+    -days 365 \
+    -newkey rsa:4096 \
+    -nodes \
+    -sha256 \
+    -keyout "${OUTPUT_DIR}/certs/domain.key" \
+    -out "${OUTPUT_DIR}/certs/domain.crt" \
+    -extensions v3_ca
+
+popd > /dev/null
