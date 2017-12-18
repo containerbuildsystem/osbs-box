@@ -3,8 +3,7 @@ FROM osbs-box:rhel7
 VOLUME [\
     "/opt/osbs", \
     "/opt/koji-clients", \
-    "/etc/pki/koji", \
-    "/certs", \
+    "/etc/pki/osbs-box", \
     "/auth"\
 ]
 
