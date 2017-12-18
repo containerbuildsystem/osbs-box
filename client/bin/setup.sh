@@ -13,7 +13,7 @@ koji add-pkg dest docker-hello-world --owner kojiadmin
 koji grant_cg_access kojiosbs atomic-reactor
 # TODO: Create a channel
 
-WORKSTATION_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
+WORKSTATION_IP='172.17.0.1'
 oc login --insecure-skip-tls-verify=true -u osbs -p osbs https://${WORKSTATION_IP}:8443/
 # Some of the commands below require user to be a cluster admin
 # In the future, this project should provide an ansible playbook
@@ -27,9 +27,9 @@ oc new-project osbs
 oc adm policy add-role-to-user edit -z builder
 
 oc secret new kojisecret \
-    serverca=/opt/koji-clients/kojiosbs/serverca.crt \
-    ca=/opt/koji-clients/kojiosbs/clientca.crt \
-    cert=/opt/koji-clients/kojiosbs/client.crt
+    serverca=/etc/pki/osbs-box/certs/koji_ca_cert.crt \
+    ca=/etc/pki/osbs-box/certs/koji_ca_cert.crt \
+    cert=/etc/pki/osbs-box/certs/kojiosbs.crt
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
@@ -41,9 +41,9 @@ oc new-project worker
 oc adm policy add-role-to-user edit -z builder
 
 oc secret new kojisecret \
-    serverca=/opt/koji-clients/kojiosbs/serverca.crt \
-    ca=/opt/koji-clients/kojiosbs/clientca.crt \
-    cert=/opt/koji-clients/kojiosbs/client.crt
+    serverca=/etc/pki/osbs-box/certs/koji_ca_cert.crt \
+    ca=/etc/pki/osbs-box/certs/koji_ca_cert.crt \
+    cert=/etc/pki/osbs-box/certs/kojiosbs.crt
 
 oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
