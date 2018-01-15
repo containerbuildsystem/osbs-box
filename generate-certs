@@ -21,6 +21,8 @@ mkuser() {
 
     openssl genrsa -out private/${user}.key 2048
     cp ${BASE_SSL_CONF} ${conf}
+    sed -i "s/dns1name/${user}/" ${conf}
+    sed -i "/ip1name/d" ${conf}
 
     openssl req -config ${conf} -new -nodes \
         -out certs/${user}.csr \
@@ -66,7 +68,8 @@ cp ${BASE_SSL_CONF} ${conf}
 
 openssl genrsa -out private/koji_ca_cert.key 2048
 
-sed -i "s/email\:move/DNS.1:koji-hub,DNS.2:${KOJI_HUB_IP}/" ${conf}
+sed -i "s/dns1name/koji-hub/" ${conf}
+sed -i "s/ip1name/${KOJI_HUB_IP}/" ${conf}
 openssl req -config ${conf} -new -x509 \
     -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=koji-hub" \
     -days 3650 \
@@ -86,7 +89,8 @@ mkuser kojiosbs
 # Generate certificates for container registry
 registry_conf=confs/registry.cnf
 cp ${BASE_SSL_CONF} ${registry_conf}
-sed -i 's/email\:move/DNS.1:172.17.0.1,IP:172.17.0.1/' ${registry_conf}
+sed -i "s/dns1name/172.17.0.1/" ${registry_conf}
+sed -i "s/ip1name/172.17.0.1,IP/" ${registry_conf}
 
 openssl req -config ${registry_conf} -x509 \
     -subj "/C=US/ST=Drunken/L=Bed/O=IT/CN=172.17.0.1" \
