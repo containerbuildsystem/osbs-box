@@ -4,6 +4,8 @@ A set of containers that emulate a OSBS deployment.
 
 ## Getting Started
 
+`osbs-box` assumes you have your system configured to run `oc cluster up`. Follow [instructions](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md) for your platform.
+
 ```
 # Start osbs-box
 python ./osbs-box.py up
