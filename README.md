@@ -4,7 +4,11 @@ A set of containers that emulate a OSBS deployment.
 
 ## Getting Started
 
-`osbs-box` assumes you have your system configured to run `oc cluster up`. Follow [instructions](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md) for your platform.
+`osbs-box` assumes you have your system configured to run `oc cluster up`.
+
+* Follow [instructions](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md) for your platform.
+* `osbs-box` assumes a Docker bridge network container subnet of 172.17.0.0/16
+* You will need `docker-compose` in addition to `docker` itself.
 
 ```
 # Start osbs-box

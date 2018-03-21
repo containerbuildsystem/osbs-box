@@ -45,7 +45,7 @@ def _run(cmd, ignore_exitcode=False, show_print=True):
 
 
 def _wait_until_container_is_up(container):
-    container_is_up = True
+    container_is_up = False
     cmd = ["docker", "inspect", "--format='{{.State.Running}}'",
            "{0}_{1}_1".format(dir_path, container)]
     for attempts in range(0, 10):
@@ -169,7 +169,7 @@ def up(args):
                                   "exec /usr/sbin/init")
     print("osbs-box is up")
 
-    print("make sure registry certificate from ./certs is copied to "
+    print("make sure registry certificate from ./ssl/certs/domain.crt is copied to "
           "/etc/docker/certs.d/172.17.0.1:5000/ca.crt")
 
 
