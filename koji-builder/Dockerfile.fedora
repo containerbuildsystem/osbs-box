@@ -2,6 +2,7 @@ FROM osbs-box:fedora
 
 RUN dnf -y --refresh install \
         mock \
+        koji \
         koji-builder \
         koji-containerbuild-builder \
         osbs-client \
