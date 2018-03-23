@@ -107,8 +107,8 @@ def up(args):
 
     # Start a cluster
     cmd = ['oc', 'cluster', 'up',
-           '--version', 'v3.6.0',
-           '--image', 'openshift/origin']
+           '--version', args.ocp_version,
+           '--image', args.ocp_image]
     output = _run(cmd)
     match = re.search(r'https://(\d*.\d*.\d*.\d*):8443', output)
     if not match:
@@ -256,6 +256,14 @@ if __name__ == "__main__":
     parse_up.add_argument(
         "--repo-url",
         help="URL of the additional repo file to install"
+    )
+    parse_up.add_argument(
+        "--ocp-version", default="v3.6.0",
+        help="Specify the tag for OpenShift images used in 'oc cluster up'"
+    )
+    parse_up.add_argument(
+        "--ocp-image", default="openshift/origin",
+        help="Specify the images to use for OpenShift in 'oc cluster up'"
     )
 
     parsed = parser.parse_args()
