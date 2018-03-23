@@ -109,6 +109,8 @@ def up(args):
     cmd = ['oc', 'cluster', 'up',
            '--version', args.ocp_version,
            '--image', args.ocp_image]
+    if args.public_hostname:
+        cmd += ["--public-hostname", args.public_hostname]
     output = _run(cmd)
     match = re.search(r'https://(\d*.\d*.\d*.\d*):8443', output)
     if not match:
@@ -264,6 +266,10 @@ if __name__ == "__main__":
     parse_up.add_argument(
         "--ocp-image", default="openshift/origin",
         help="Specify the images to use for OpenShift in 'oc cluster up'"
+    )
+    parse_up.add_argument(
+        "--public-hostname",
+        help="Public hostname for osbs-box services"
     )
 
     parsed = parser.parse_args()
