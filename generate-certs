@@ -6,6 +6,12 @@ WORK_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_DIR="${WORK_DIR}/ssl"
 BASE_SSL_CONF="${WORK_DIR}/base-ssl.cnf"
 
+# sanity check
+if [ -z $KOJI_HUB_IP ]; then
+    echo "Failed to determine the koji IP. This could be caused by missing gataway in the docker default bridge network. Use 'docker network inspect -f \"{{range .IPAM.Config }}{{ .Gateway }}{{end}}\" bridge' to verify that the gataway is set. Terminating now."
+    exit 1
+fi
+
 mkdir -p "${OUTPUT_DIR}"/{certs,private,confs}
 
 mkuser() {
