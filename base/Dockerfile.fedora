@@ -1,4 +1,4 @@
-FROM fedora:26
+FROM registry.fedoraproject.org/fedora:27
 MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 
 ARG UPDATES

@@ -10,10 +10,11 @@ RUN dnf -y --refresh install \
         koji-hub-plugins \
         koji-utils \
         koji-web \
-        mod_auth_kerb \
+        mod_auth_gssapi \
         mod_ssl \
         mod_wsgi \
         python-requests \
+        python2-koji \
     && dnf clean all
 
 COPY etc/ /etc/
