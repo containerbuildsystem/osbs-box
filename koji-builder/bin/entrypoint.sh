@@ -2,6 +2,8 @@
 
 set -xeuo pipefail
 
+sleep 60
+
 mkdir -p /root/.koji
 ln -f -s /opt/koji-clients/kojiadmin/config /root/.koji/config
 

@@ -1,6 +1,8 @@
 #!/bin/bash
 set -xeuo pipefail
 
+sleep 120
+
 rm -rf /root/{.koji,bin}
 mkdir -p /root/{.koji,bin}
 

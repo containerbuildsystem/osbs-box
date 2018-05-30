@@ -1,6 +1,8 @@
 #!/bin/bash
 set -xeuo pipefail
 
+sleep 30
+
 if [ ! -e "/opt/osbs/hub-init" ]
 then
     . /usr/local/bin/setup.sh
