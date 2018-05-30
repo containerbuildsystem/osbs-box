@@ -4,7 +4,7 @@ A set of containers that emulate a OSBS deployment.
 
 ## Getting Started
 
-`osbs-box` assumes you have your system configured to run `oc cluster up`.
+`osbs-box` assumes you have your system configured to run `oc cluster up`. This includes the configuration of docker daemon for the insecure registries on the used networks. Rule for 172.0.0.0/8 network will cover all possible networks.
 
 * Follow [instructions](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md) for your platform.
 * `osbs-box` assumes a Docker bridge network container subnet of 172.17.0.0/16 and it having set gateway(this is not true on Fedora 26 and older, out of the box docker installations)
