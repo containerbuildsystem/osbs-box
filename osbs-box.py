@@ -81,31 +81,24 @@ def _wait_until_string_is_in_logs(container, str_to_find):
         raise RuntimeError("%s failed to start", container)
 
 
+def os_down(args):
+    _run(['oc', 'cluster', 'down'], ignore_exitcode=True)
+
+
 def down(args, delete_volumes=False):
     print("osbs-box: down")
     cmd = ['docker-compose', 'down']
     if delete_volumes:
         cmd += ['-v']
     _run(cmd, ignore_exitcode=True)
-    _run(['oc', 'cluster', 'down'], ignore_exitcode=True)
+    os_down(args)
 
 
 def cleanup(args):
     down(args, delete_volumes=True)
 
 
-def up(args):
-    if not args.no_cleanup:
-        cleanup(args)
-    print("osbs-box: up")
-
-    if not os.path.exists('ssl'):
-        print("Generating certificates")
-        _run(['./generate-certs'])
-    else:
-        print("Reusing existing certificates")
-
-    # Start a cluster
+def os_up(args):
     cmd = ['oc', 'cluster', 'up',
            '--version', args.ocp_version,
            '--image', args.ocp_image]
@@ -126,6 +119,21 @@ def up(args):
     cmd = ["oc", "-n", "osbs", "adm", "policy",
            "add-cluster-role-to-user", "cluster-admin", "osbs"]
     _run(cmd)
+
+
+def up(args):
+    if not args.no_cleanup:
+        cleanup(args)
+    print("osbs-box: up")
+
+    if not os.path.exists('ssl'):
+        print("Generating certificates")
+        _run(['./generate-certs'])
+    else:
+        print("Reusing existing certificates")
+
+    # Start an OpenShift cluster
+    cluster_up(args)
 
     # Copy distro-specific Dockerfile
     filename = "Dockerfile.{}".format(args.distro)
@@ -230,6 +238,10 @@ if __name__ == "__main__":
     parse_up.set_defaults(func=up)
     parse_down = subparsers.add_parser('down', help='destroy existing osbs-box')
     parse_down.set_defaults(func=down)
+    parse_os_up = subparsers.add_parser('os-up', help='start openshift cluster for osbs-box')
+    parse_os_up.set_defaults(func=os_up)
+    parse_os_down = subparsers.add_parser('os-down', help='destroy openshift cluster for osbs-box')
+    parse_os_down.set_defaults(func=os_down)
     parse_cleanup = subparsers.add_parser('cleanup', help='remove configuration volumes')
     parse_cleanup.set_defaults(func=cleanup)
     parse_status = subparsers.add_parser('status', help='show openshift, koji and container status')
@@ -258,6 +270,18 @@ if __name__ == "__main__":
     parse_up.add_argument(
         "--repo-url",
         help="URL of the additional repo file to install"
+    )
+    parse_os_up.add_argument(
+        "--ocp-version", default="v3.6.0",
+        help="Specify the tag for OpenShift images used in 'oc cluster up'"
+    )
+    parse_os_up.add_argument(
+        "--ocp-image", default="openshift/origin",
+        help="Specify the images to use for OpenShift in 'oc cluster up'"
+    )
+    parse_os_up.add_argument(
+        "--public-hostname",
+        help="Public hostname for osbs-box services"
     )
     parse_up.add_argument(
         "--ocp-version", default="v3.6.0",
