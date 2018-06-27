@@ -133,7 +133,7 @@ def up(args):
         print("Reusing existing certificates")
 
     # Start an OpenShift cluster
-    cluster_up(args)
+    os_up(args)
 
     # Copy distro-specific Dockerfile
     filename = "Dockerfile.{}".format(args.distro)
