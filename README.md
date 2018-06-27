@@ -31,12 +31,12 @@ python ./osbs-box up --distro rhel7 --repo-url=...
 
 ```
 # On client container
-koji-containerbuild container-build candidate \
+koji container-build candidate \
     git://github.com/lcarva/docker-hello-world#origin/osbs-box-demo \
     --git-branch osbs-box-demo
 
 # Or from the host (useful for retaining bash history between runs)
-docker exec -it osbsbox_koji-client_1 koji-containerbuild container-build candidate \
+docker exec -it osbsbox_koji-client_1 koji container-build candidate \
     git://github.com/lcarva/docker-hello-world#origin/osbs-box-demo \
     --git-branch osbs-box-demo
 ```
