@@ -302,6 +302,9 @@ if __name__ == "__main__":
     parse_cleanup.set_defaults(func=cleanup)
     parse_status = subparsers.add_parser('status', help='show openshift, koji and container status')
     parse_status.set_defaults(func=status)
+    parse_pull_image = subparsers.add_parser('pull-image',
+        help='pull image and push it to local registry')
+    parse_pull_image.set_defaults(func=lambda x: _pull_image(x.source, x.destination))
 
     parse_up.add_argument(
         "--no-cleanup", action="store_true",
@@ -350,6 +353,15 @@ if __name__ == "__main__":
     parse_up.add_argument(
         "--public-hostname",
         help="Public hostname for osbs-box services"
+    )
+    parse_pull_image.add_argument(
+        "source",
+        help="Image to pull, e.g. registry.fedoraproject.org/fedora:27, fedora:28"
+    )
+    parse_pull_image.add_argument(
+        "destination",
+        help=("Which repo:tag to push image to in local registry, "
+              "e.g. fedora:27, fedora:28")
     )
 
     parsed = parser.parse_args()
