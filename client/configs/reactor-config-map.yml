@@ -1,0 +1,57 @@
+---
+version: 1
+
+clusters:
+  x86_64:
+  - name: worker
+    max_concurrent_builds: 4
+    enabled: true
+
+clusters_client_config_dir: /var/run/secrets/atomic-reactor/client-config-secret
+
+koji:
+  hub_url: https://KOJI_HUB_IP:8083/kojihub
+  root_url: https://KOJI_HUB_IP:8083/kojifiles
+  auth:
+    ssl_certs_dir: /var/run/secrets/atomic-reactor/kojisecret
+
+image_labels:
+  vendor: "Red Hat, Inc."
+  authoritative-source-url: registry.fedoraproject.org
+  distribution-scope: public
+
+openshift:
+  url: https://OPENSHIFT_IP:8443/
+  insecure: True
+  build_json_dir: /usr/share/osbs/
+  auth:
+    enable: True
+
+platform_descriptors:
+- platform: x86_64
+  architecture: amd64
+  enable_v1: True
+
+content_versions:
+- v1
+- v2
+
+registries:
+- url: https://172.17.0.1:5000/v2
+  insecure: True
+  auth:
+    cfg_path: /var/run/secrets/atomic-reactor/v2-registry-dockercfg
+
+source_registry:
+  url: http://registry.fedoraproject.org
+  # url: https://172.17.0.1:5000/
+  insecure: true
+
+sources_command: fedpkg sources
+
+required_secrets:
+- kojisecret
+- v2-registry-dockercfg
+
+worker_token_secrets:
+- client-config-secret
