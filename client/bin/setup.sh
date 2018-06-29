@@ -51,10 +51,14 @@ oc adm policy add-role-to-user system:build-strategy-custom -z builder -n worker
 
 oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
 
-cp /configs/reactor-config-secret.yml /tmp/config.yaml
+cp /configs/reactor-config-secret.yml /tmp/reactor-config-secret.yml
+cp /configs/reactor-config-map.yml /tmp/reactor-config-map.yml
 cp /configs/client-config-secret.conf /tmp/osbs.conf
 sed -i "s/KOJI_HUB_IP/${WORKSTATION_IP}/" /tmp/osbs.conf
+sed -i "s/KOJI_HUB_IP/${WORKSTATION_IP}/" /tmp/reactor-config-map.yml
+sed -i "s/OPENSHIFT_IP/${WORKSTATION_IP}/" /tmp/reactor-config-map.yml
 
 oc project osbs
 oc create secret generic client-config-secret --from-file=/tmp/osbs.conf
-oc create secret generic reactor-config-secret --from-file=/tmp/config.yaml
+oc create secret generic reactor-config-secret --from-file='config.yaml'=/tmp/reactor-config-secret.yml
+oc create configmap reactor-config-map --from-file='config.yaml'=/tmp/reactor-config-map.yml
