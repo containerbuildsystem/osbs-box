@@ -2,7 +2,8 @@
 import argparse
 import re
 import os
-from subprocess import CalledProcessError, Popen, PIPE, STDOUT
+import yaml
+from subprocess import CalledProcessError, Popen, PIPE, STDOUT, DEVNULL, check_call
 from time import sleep
 from textwrap import dedent
 
@@ -81,6 +82,20 @@ def _wait_until_string_is_in_logs(container, str_to_find):
         raise RuntimeError("%s failed to start", container)
 
 
+def _wait_until_openshift_is_up():
+    cmd = ['oc', 'cluster', 'status']
+
+    print("Waiting for OpenShift cluster to be up")
+    for _ in range(90):
+        try:
+            check_call(cmd, stdout=DEVNULL)
+            return
+        except CalledProcessError:
+            sleep(1)
+
+    raise RuntimeError('OpenShift cluster is not up! See logs for "origin" container.')
+
+
 def os_down(args):
     _run(['oc', 'cluster', 'down'], ignore_exitcode=True)
 
@@ -108,8 +123,12 @@ def os_up(args):
     match = re.search(r'https://(\d*.\d*.\d*.\d*):8443', output)
     if not match:
         raise RuntimeError("Failed to find openshift IP in output:\n%s" % output)
-
     openshift_ip = match.group(1)
+
+    if _update_origin_config():
+        print("Restarting origin container due to config changes")
+        _run(['docker', 'restart', 'origin'])
+        _wait_until_openshift_is_up()
 
     # login
     cmd = ["oc", "login", "-u", "system:admin", "https://{}:8443".format(openshift_ip)]
@@ -131,7 +150,6 @@ def up(args):
         _run(['./generate-certs'])
     else:
         print("Reusing existing certificates")
-
     # Start an OpenShift cluster
     os_up(args)
 
@@ -181,6 +199,28 @@ def up(args):
 
     print("make sure registry certificate from ./ssl/certs/domain.crt is copied to "
           "/etc/docker/certs.d/172.17.0.1:5000/ca.crt")
+
+
+def _update_origin_config():
+    config_path = '/var/lib/origin/openshift.local.config/master/master-config.yaml'
+    with open(config_path) as fd:
+        config = yaml.safe_load(fd)
+
+    registries = (config
+        .setdefault('imagePolicyConfig', {})
+        .setdefault('allowedRegistriesForImport', []))
+
+    domains = set(registry['domainName'] for registry in registries)
+    local_registry = '172.17.0.1:5000'
+    if local_registry not in domains:
+        registries.append({'domainName': local_registry})
+
+        with open(config_path, 'w') as fd:
+            yaml.safe_dump(config, fd)
+
+        return True
+
+    return False
 
 
 def status(args):
