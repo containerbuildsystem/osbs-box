@@ -10,6 +10,10 @@ from textwrap import dedent
 BASEIMAGE = 'osbs-box'
 DIRECTORIES = ['base', 'client', 'koji-db', 'hub', 'koji-builder', 'shared-data']
 SERVICES = ['shared-data', 'koji-db', 'koji-hub', 'koji-builder', 'koji-client']
+LOCAL_REGISTRY = '172.17.0.1:5000'
+AUTO_PULL_IMAGES = {
+    'registry.fedoraproject.org/fedora:latest': 'fedora:latest'
+}
 dir_path = os.path.basename(os.path.dirname(os.path.realpath(__file__))).replace('-', '')
 
 
@@ -195,6 +199,11 @@ def up(args):
     _wait_until_container_is_up('koji-builder')
     _wait_until_string_is_in_logs("{}_koji-builder_1".format(dir_path),
                                   "exec /usr/sbin/init")
+
+    print("Automatically populating local registry with images")
+    for source, destination in AUTO_PULL_IMAGES.items():
+        _pull_image(source, destination)
+
     print("osbs-box is up")
 
     print("make sure registry certificate from ./ssl/certs/domain.crt is copied to "
@@ -211,9 +220,8 @@ def _update_origin_config():
         .setdefault('allowedRegistriesForImport', []))
 
     domains = set(registry['domainName'] for registry in registries)
-    local_registry = '172.17.0.1:5000'
-    if local_registry not in domains:
-        registries.append({'domainName': local_registry})
+    if LOCAL_REGISTRY not in domains:
+        registries.append({'domainName': LOCAL_REGISTRY})
 
         with open(config_path, 'w') as fd:
             yaml.safe_dump(config, fd)
@@ -221,6 +229,14 @@ def _update_origin_config():
         return True
 
     return False
+
+
+def _pull_image(source, destination_repo):
+    destination = LOCAL_REGISTRY + '/' + destination_repo
+    print("Pulling {} and pushing it to {}".format(source, destination))
+    _run(['docker', 'pull', source])
+    _run(['docker', 'tag', source, destination])
+    _run(['docker', 'push', destination])
 
 
 def status(args):
