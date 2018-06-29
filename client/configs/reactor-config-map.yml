@@ -17,7 +17,7 @@ koji:
 
 image_labels:
   vendor: "Red Hat, Inc."
-  authoritative-source-url: registry.fedoraproject.org
+  authoritative-source-url: osbs-box.example.com
   distribution-scope: public
 
 openshift:
@@ -43,8 +43,7 @@ registries:
     cfg_path: /var/run/secrets/atomic-reactor/v2-registry-dockercfg
 
 source_registry:
-  url: http://registry.fedoraproject.org
-  # url: https://172.17.0.1:5000/
+  url: https://172.17.0.1:5000/
   insecure: true
 
 sources_command: fedpkg sources
