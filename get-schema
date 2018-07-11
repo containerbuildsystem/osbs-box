@@ -1,0 +1,14 @@
+#! /bin/bash
+
+set -xeuo pipefail
+
+if [ -d ./tmp ]; then
+  rm -rf ./tmp
+fi
+
+mkdir -p ./tmp
+pushd ./tmp
+  dnf --releasever `fgrep fedora ../base/Dockerfile.fedora|sed "s:[^0-9]::g"|head -n 1` -y download koji
+  rpm2cpio ./koji*noarch.rpm | cpio --no-absolute-filenames -idmv "*schema.sql"
+  cp `find -name schema.sql` ../koji-db/sql-init/00-schema.sql
+popd

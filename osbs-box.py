@@ -154,6 +154,17 @@ def up(args):
         _run(['./generate-certs'])
     else:
         print("Reusing existing certificates")
+
+    # make sure that we have schema for the koji db
+    # use the koji package as it is more resilient than downloading it from master branch
+    # only for Fedora for now as it is using dnf
+    if args.distro == "fedora" :
+        if not os.path.exists('koji-db/sql-init/00-schema.sql'):
+            print("Retrieving sql schema for the koji DB")
+            _run(['./get-schema'])
+        else:
+            print("Reusing existing schema")
+
     # Start an OpenShift cluster
     os_up(args)
 
