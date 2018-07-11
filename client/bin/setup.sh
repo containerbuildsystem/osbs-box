@@ -35,7 +35,8 @@ oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
 oc adm policy add-role-to-user system:build-strategy-custom -z builder -n osbs
 
-oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
+oc create secret generic v2-registry-dockercfg --from-file=.dockerconfigjson=/configs/dockerconfigjson --type=kubernetes.io/dockerconfigjson
+oc secrets link builder v2-registry-dockercfg --for=mount
 
 oc new-project worker
 oc adm policy add-role-to-user edit -z builder
@@ -49,7 +50,8 @@ oc secrets add serviceaccount/builder secrets/kojisecret --for=mount
 
 oc adm policy add-role-to-user system:build-strategy-custom -z builder -n worker
 
-oc secrets new-dockercfg v2-registry-dockercfg --docker-server=172.17.0.1:5000 --docker-username=osbs --docker-password=craycray --docker-email=test@test.com
+oc create secret generic v2-registry-dockercfg --from-file=.dockerconfigjson=/configs/dockerconfigjson --type=kubernetes.io/dockerconfigjson
+oc secrets link builder v2-registry-dockercfg --for=mount
 
 cp /configs/reactor-config-secret.yml /tmp/reactor-config-secret.yml
 cp /configs/reactor-config-map.yml /tmp/reactor-config-map.yml
