@@ -6,7 +6,7 @@ MAINTAINER Luiz Carvalho <lucarval@redhat.com>
 # alphabetical order
 COPY sql-init/ /docker-entrypoint-initdb.d/
 
-ADD https://pagure.io/koji/raw/koji-1.15-updates/f/docs/schema.sql \
+ADD https://pagure.io/koji/raw/koji-1.16-updates/f/docs/schema.sql \
     /docker-entrypoint-initdb.d/00-schema.sql
 
 RUN chmod o+r /docker-entrypoint-initdb.d/00-schema.sql
