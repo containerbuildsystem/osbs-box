@@ -9,7 +9,7 @@ from textwrap import dedent
 
 BASEIMAGE = 'osbs-box'
 DIRECTORIES = ['base', 'client', 'koji-db', 'hub', 'koji-builder', 'shared-data']
-SERVICES = ['shared-data', 'koji-db', 'koji-hub', 'koji-builder', 'koji-client']
+SERVICES = ['shared-data', 'koji-db', 'koji-hub', 'koji-builder', 'koji-client', 'skopeo-lite']
 LOCAL_REGISTRY = '172.17.0.1:5000'
 AUTO_PULL_IMAGES = {
     'registry.fedoraproject.org/fedora:latest': 'fedora:latest'
@@ -202,7 +202,7 @@ def up(args):
 
     print("Automatically populating local registry with images")
     for source, destination in AUTO_PULL_IMAGES.items():
-        _pull_image(source, destination)
+        _copy_image(source, destination)
 
     print("osbs-box is up")
 
@@ -237,6 +237,15 @@ def _pull_image(source, destination_repo):
     _run(['docker', 'pull', source])
     _run(['docker', 'tag', source, destination])
     _run(['docker', 'push', destination])
+
+
+def _copy_image(source, destination_repo):
+    destination = 'docker://{}/{}'.format(LOCAL_REGISTRY, destination_repo)
+    if not source.startswith('docker://'):
+        source = 'docker://' + source
+    print('Copying {} to {}'.format(source, destination))
+    _run(['docker', 'run', '--rm', '{}_skopeo-lite'.format(dir_path), 'copy',
+          '--src-tls-verify=false', '--dest-tls-verify=false', source, destination])
 
 
 def status(args):
@@ -305,6 +314,9 @@ if __name__ == "__main__":
     parse_pull_image = subparsers.add_parser('pull-image',
         help='pull image and push it to local registry')
     parse_pull_image.set_defaults(func=lambda x: _pull_image(x.source, x.destination))
+    parse_copy_image = subparsers.add_parser('copy-image',
+        help='copy image and manifests using skopeo-lite')
+    parse_copy_image.set_defaults(func=lambda x: _copy_image(x.source, x.destination))
 
     parse_up.add_argument(
         "--no-cleanup", action="store_true",
@@ -361,6 +373,15 @@ if __name__ == "__main__":
     parse_pull_image.add_argument(
         "destination",
         help=("Which repo:tag to push image to in local registry, "
+              "e.g. fedora:27, fedora:28")
+    )
+    parse_copy_image.add_argument(
+        "source",
+        help="Source image, e.g. registry.fedoraproject.org/fedora:28"
+    )
+    parse_copy_image.add_argument(
+        "destination",
+        help=("Destination repo:tag for copied image in local registry, "
               "e.g. fedora:27, fedora:28")
     )
 
