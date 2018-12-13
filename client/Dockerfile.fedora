@@ -3,7 +3,7 @@ FROM osbs-box:fedora
 RUN dnf -y --refresh install \
       origin-clients \
       iproute \
-      koji-containerbuild-cli \
+      koji-containerbuild \
     && dnf clean all
 
 ADD bin/ /usr/local/bin/

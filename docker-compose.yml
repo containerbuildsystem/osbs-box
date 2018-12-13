@@ -19,6 +19,10 @@ services:
             - osbsbox-registry-auth:/auth
             - ./ssl:/etc/pki/osbs-box:z
 
+    skopeo-lite:
+      build: skopeo-lite
+      hostname: skopeo-lite
+
     koji-db:
         build: koji-db
         hostname: koji-db
