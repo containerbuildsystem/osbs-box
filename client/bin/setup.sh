@@ -9,6 +9,8 @@ koji add-target candidate build dest
 koji add-pkg dest osbs-buildroot-docker --owner kojiadmin
 koji add-pkg dest docker-hello-world --owner kojiadmin
 
+koji call addBType operator-manifests
+
 # Enable content generator access
 koji grant_cg_access kojiosbs atomic-reactor
 # TODO: Create a channel
