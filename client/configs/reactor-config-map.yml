@@ -52,3 +52,5 @@ required_secrets:
 
 worker_token_secrets:
 - client-config-secret
+
+skip_koji_check_for_base_image: True
