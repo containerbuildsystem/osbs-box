@@ -1,0 +1,20 @@
+FROM osbs-box/koji-base
+
+# Install koji builder components including
+# the containerbuild plugin and osbs-client
+RUN dnf -y install "koji-builder" \
+                   "koji-containerbuild-builder" \
+                   "osbs-client" && \
+    dnf clean all
+
+# Update osbs-client and koji-containerbuild,
+# copy the builder plugin to the right location
+RUN $PIP install -U "$OSBS_CLIENT_PIP_REF" && \
+    $PIP install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
+    copy-kcb-plugin.sh "builder"
+
+COPY bin/ /usr/local/bin/
+COPY etc/ /etc/
+
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["kojid", "--fg", "--force-lock", "--verbose"]

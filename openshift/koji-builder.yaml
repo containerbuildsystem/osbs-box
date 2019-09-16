@@ -1,0 +1,84 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: koji-builder
+  description: >
+    Koji-builder runs the kojid daemon, which polls koji hub for incoming build
+    requests and handles them accordingly.
+
+    Expects no user interaction, but is capable of calling koji commands like
+    the client (only the containerbuild plugin is missing).
+
+parameters:
+  - name: OSBS_BOX_REPO
+    description: Repository to build the image from
+    value: https://github.com/containerbuildsystem/osbs-box
+    required: true
+
+  - name: OSBS_BOX_VERSION
+    description: Branch/tag/commit within the repository specified above
+    value: master
+    required: true
+
+labels:
+  app: koji-builder
+
+objects:
+  - kind: ImageStream
+    apiVersion: v1
+    metadata:
+      name: koji-builder
+    spec: {}
+
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: koji-builder
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${OSBS_BOX_REPO}
+          ref: ${OSBS_BOX_VERSION}
+        contextDir: koji-builder
+      strategy:
+        type: Docker
+        dockerStrategy:
+          from:
+            kind: ImageStreamTag
+            name: koji-base:latest
+      output:
+        to:
+          kind: ImageStreamTag
+          name: koji-builder:latest
+      triggers:
+        - type: ImageChange
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: koji-builder
+    spec:
+      replicas: 1
+      selector:
+        app: koji-builder
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          name: koji-builder
+          labels:
+            app: koji-builder
+        spec:
+          containers:
+            - name: koji-builder
+              image: koji-builder:latest
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - koji-builder
+            from:
+              kind: ImageStreamTag
+              name: koji-builder:latest

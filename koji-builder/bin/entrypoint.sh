@@ -1,26 +1,19 @@
-#!/bin/bash
+#!/bin/sh
+set -euo pipefail
 
-set -xeuo pipefail
+# Become kojiadmin
+pick-koji-user.sh "kojiadmin"
 
-mkdir -p /root/.koji
-ln -f -s /opt/koji-clients/kojiadmin/config /root/.koji/config
-
-# Actions below this line, require koji hub to be up
-set +xe
-echo "Waiting for koji-hub to start..."
-while true; do
-    koji hello && break
-	sleep 5
-done
-set -xe
-
-if [ ! -e "/opt/osbs/builder-init" ]
-then
-    prepare_builder.sh
-    touch /opt/osbs/builder-init
+# Wait for up to a minute until koji is ready
+if ! timeout 60 moshimoshi.sh; then
+    echo "Koji still not ready after 60s, something might be wrong." >&2
+    exit 124
 fi
 
-ln -f -s /opt/osbs/osbs.conf /etc/osbs.conf
+# Set up kojibuilder
+if ! koji list-hosts | grep -q "kojibuilder"; then
+    koji add-host "kojibuilder" x86_64
+    koji add-host-to-channel --new "kojibuilder" "container"
+fi
 
-systemctl enable kojid
 exec "$@"
