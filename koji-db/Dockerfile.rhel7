@@ -1,9 +1,0 @@
-FROM postgres:9.4
-MAINTAINER Luiz Carvalho <lucarval@redhat.com>
-
-# Location for init scripts executed only during DB
-# initialization. Scripts will be executed in
-# alphabetical order
-COPY sql-init/ /docker-entrypoint-initdb.d/
-
-RUN chmod o+r /docker-entrypoint-initdb.d/00-schema.sql

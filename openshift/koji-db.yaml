@@ -1,0 +1,114 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: koji-db
+  description: >
+    Koji-db provides the PostgreSQL database where koji stores its data.
+
+    Exposes port 5432, where koji-hub can access the data it needs to serve
+    the koji webpage and handle client requests.
+
+parameters:
+  - name: OSBS_BOX_REPO
+    description: Repository to build the image from
+    value: https://github.com/containerbuildsystem/osbs-box
+    required: true
+
+  - name: OSBS_BOX_VERSION
+    description: Branch/tag/commit within the repository specified above
+    value: master
+    required: true
+
+labels:
+  app: koji-db
+
+objects:
+  - kind: ImageStream
+    apiVersion: v1
+    metadata:
+      name: koji-db
+    spec: {}
+
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: koji-db
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${OSBS_BOX_REPO}
+          ref: ${OSBS_BOX_VERSION}
+        contextDir: koji-db
+        images:
+          - from:
+              kind: ImageStreamTag
+              name: koji-base:latest
+            paths:
+              - sourcePath: /usr/share/doc/koji/docs/schema.sql
+                destinationDir: koji-db/sql-init
+      strategy:
+        type: Docker
+        dockerStrategy:
+          from:
+            kind: DockerImage
+            name: postgres:12
+      output:
+        to:
+          kind: ImageStreamTag
+          name: koji-db:latest
+      triggers:
+        - type: ImageChange
+          imageChange:
+            from:
+              kind: ImageStreamTag
+              name: koji-base:latest
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: koji-db
+    spec:
+      replicas: 1
+      selector:
+        app: koji-db
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          name: koji-db
+          labels:
+            app: koji-db
+        spec:
+          containers:
+            - name: koji-db
+              image: koji-db:latest
+              ports:
+                - containerPort: 5432
+              volumeMounts:
+                - name: koji-db-data
+                  mountPath: /var/lib/postgresql/data
+          volumes:
+            - name: koji-db-data
+              emptyDir: {}
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - koji-db
+            from:
+              kind: ImageStreamTag
+              name: koji-db:latest
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: koji-db
+    spec:
+      selector:
+        app: koji-db
+      ports:
+        - name: "5432"
+          port: 5432
+          targetPort: 5432
