@@ -1,0 +1,44 @@
+---
+### General settings
+
+# OSBS-Box repository and version (branch, tag or commit ID)
+osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
+osbs_box_version: a-new-box
+
+# Allow ansible to install packages?
+# If true, you may need to run the generate-certs playbook with
+# --ask-become-pass (-K) and provide your sudo password.
+# Otherwise, you will need to make sure python-cryptograhy is installed before
+# running said playbook.
+allow_pkg_install: false
+
+# Directory for keeping miscellanous osbs-box data
+osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
+
+
+### Repositories and versions for OSBS components
+
+atomic_reactor_repo: https://github.com/containerbuildsystem/atomic-reactor
+atomic_reactor_version: master
+
+osbs_client_repo: https://github.com/containerbuildsystem/osbs-client
+osbs_client_version: master
+
+koji_containerbuild_repo: https://github.com/containerbuildsystem/koji-containerbuild
+koji_containerbuild_version: master
+
+dockerfile_parse_repo: https://github.com/containerbuildsystem/dockerfile-parse
+dockerfile_parse_version: master
+
+dockpulp_repo: https://github.com/release-engineering/dockpulp
+dockpulp_version: master
+
+
+### Koji settings
+
+# Openshift namespace where koji components will live
+koji_namespace: koji
+
+# Directories where koji certificates will be kept
+koji_certs_work: "{{ osbs_box_data_dir }}/koji-certs-work"  # keys, CSRs, CRTs
+koji_certs_final: "{{ osbs_box_data_dir }}/koji-certs-final"  # CA CRT, PEMs
