@@ -3,6 +3,7 @@
   vars:
     # This is a constant, please do not override
     koji_components:
+      - koji-volumes
       - koji-base
       - koji-client
       - koji-builder
@@ -63,6 +64,15 @@
       loop:
         "{{ koji_components }}"
       changed_when: true
+
+    - name: Set up directories that will serve as backing storage for koji PVs
+      file:
+        path: "{{ item }}"
+        state: directory
+        setype: container_file_t
+      loop:
+        - "{{ koji_files_dir }}"
+        - "{{ koji_db_data_dir }}"
 
     - name: Allow containers to run as root
       command:

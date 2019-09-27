@@ -90,7 +90,8 @@ objects:
                   mountPath: /var/lib/postgresql/data
           volumes:
             - name: koji-db-data
-              emptyDir: {}
+              persistentVolumeClaim:
+                claimName: koji-db-data
       triggers:
         - type: ImageChange
           imageChangeParams:
