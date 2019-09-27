@@ -2,6 +2,7 @@ FROM osbs-box:rhel7
 
 RUN yum install -y \
         mock \
+        koji \
         koji-builder \
         koji-containerbuild-builder \
         osbs-client \
