@@ -1,0 +1,77 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: koji-volumes
+  description: >
+    Persistent volumes for koji data. There is one volume for koji-db data
+    and one for the /mnt/koji/ file hierarchy. They are HostPath volumes.
+
+    The reclaim policy for these volumes is Retain, meaning the data is never
+    removed (not by openshift, anyway).
+
+    The persistent volume claims that bind to these PVs are also defined here.
+
+parameters:
+  - name: KOJI_FILES_DIR
+    description: Local directory for koji files (the /mnt/koji/ structure)
+    required: true
+
+  - name: KOJI_DB_DATA_DIR
+    description: Local directory for koji-db postgresql data
+    required: true
+
+labels:
+  volume: koji-volume
+
+objects:
+  - kind: PersistentVolume
+    apiVersion: v1
+    metadata:
+      name: koji-files
+    spec:
+      hostPath:
+        path: ${KOJI_FILES_DIR}
+      accessModes:
+        # Can be mounted R/W by one node (node as in machine)
+        # The only supported access mode for HostPaths PVs
+        - ReadWriteOnce
+      capacity:
+        storage: 1Gi
+      persistentVolumeReclaimPolicy: Retain
+
+  - kind: PersistentVolume
+    apiVersion: v1
+    metadata:
+      name: koji-db-data
+    spec:
+      hostPath:
+        path: ${KOJI_DB_DATA_DIR}
+      accessModes:
+        - ReadWriteOnce
+      capacity:
+        storage: 1Gi
+      persistentVolumeReclaimPolicy: Retain
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: koji-files
+    spec:
+      volumeName: koji-files
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: koji-db-data
+    spec:
+      volumeName: koji-db-data
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

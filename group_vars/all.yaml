@@ -42,3 +42,7 @@ koji_namespace: koji
 # Directories where koji certificates will be kept
 koji_certs_work: "{{ osbs_box_data_dir }}/koji-certs-work"  # keys, CSRs, CRTs
 koji_certs_final: "{{ osbs_box_data_dir }}/koji-certs-final"  # CA CRT, PEMs
+
+# Directories that will serve as the backing storage for persistent volumes
+koji_files_dir: "{{ osbs_box_data_dir }}/pv/koji-files"
+koji_db_data_dir: "{{ osbs_box_data_dir }}/pv/koji-db-data"
