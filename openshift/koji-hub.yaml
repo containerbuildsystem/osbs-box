@@ -80,11 +80,12 @@ objects:
                 - containerPort: 80
                 - containerPort: 443
               volumeMounts:
-                - name: koji-hub-data
+                - name: koji-files
                   mountPath: /mnt/koji
           volumes:
-            - name: koji-hub-data
-              emptyDir: {}
+            - name: koji-files
+              persistentVolumeClaim:
+                claimName: koji-files
       triggers:
         - type: ImageChange
           imageChangeParams:

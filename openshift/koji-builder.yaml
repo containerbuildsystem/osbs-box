@@ -73,6 +73,13 @@ objects:
           containers:
             - name: koji-builder
               image: koji-builder:latest
+              volumeMounts:
+                - name: koji-files
+                  mountPath: /mnt/koji
+          volumes:
+            - name: koji-files
+              persistentVolumeClaim:
+                claimName: koji-files
       triggers:
         - type: ImageChange
           imageChangeParams:
