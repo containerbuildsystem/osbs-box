@@ -2,7 +2,7 @@
   hosts: localhost
   vars:
     # This is a constant, please do not override
-    koji_certs_basic:
+    koji_client_certs:
       - kojiadmin
       - kojiosbs
       - kojibuilder
@@ -16,7 +16,7 @@
       when: allow_pkg_install
       become: true
 
-    - name: Make sure koji certificates directories exist
+    - name: Make sure koji certificate directories exist
       file:
         path: "{{ item }}"
         state: directory
@@ -25,15 +25,11 @@
         - "{{ koji_certs_final }}"
 
   tasks:
-    - name: Generate private keys for all certificates
+    - name: Generate CA private key
       openssl_privatekey:
-        path: "{{ koji_certs_work }}/{{ item }}.key"
-      with_items:
-        - koji-ca
-        - koji-hub
-        - "{{ koji_certs_basic }}"
+        path: "{{ koji_certs_work }}/koji-ca.key"
 
-    - name: Generate CA certificate CSR
+    - name: Generate CA CSR
       openssl_csr:
         path: "{{ koji_certs_work }}/koji-ca.csr"
         privatekey_path: "{{ koji_certs_work }}/koji-ca.key"
@@ -41,7 +37,7 @@
         basic_constraints:
           - "CA:TRUE"
 
-    - name: Self-sign CA certificate CSR
+    - name: Self-sign CA CSR
       openssl_certificate:
         provider: selfsigned
         selfsigned_not_after: +365d
@@ -52,23 +48,44 @@
         # otherwise an expired certificate would not be overwritten
         force: true
 
+    - name: Generate koji-hub private key
+      openssl_privatekey:
+        path: "{{ koji_certs_final }}/koji-hub.key"
+
     - name: Generate koji-hub CSR
       openssl_csr:
         path: "{{ koji_certs_work }}/koji-hub.csr"
-        privatekey_path: "{{ koji_certs_work }}/koji-hub.key"
+        privatekey_path: "{{ koji_certs_final }}/koji-hub.key"
         common_name: koji-hub
         subject_alt_name:
-          - "DNS:koji-hub"
-          - "DNS:koji-hub.{{ koji_namespace }}.svc"
-          - "DNS:koji-hub-{{ koji_namespace }}.127.0.0.1.nip.io"
+          - "DNS:localhost"   # Same pod
+          - "DNS:koji-hub"  # Different pod in the same namespace
+          - "DNS:koji-hub.{{ koji_namespace }}"   # Pod in different namespace
+          - "DNS:koji-hub.{{ inventory_hostname }}"  # External route
 
-    - name: Generate basic client CSRs
+    - name: Sign koji-hub CSR
+      openssl_certificate:
+        provider: ownca
+        ownca_not_after: +365d
+        path: "{{ koji_certs_final }}/koji-hub.crt"
+        csr_path: "{{ koji_certs_work }}/koji-hub.csr"
+        ownca_path: "{{ koji_certs_final }}/koji-ca.crt"
+        ownca_privatekey_path: "{{ koji_certs_work }}/koji-ca.key"
+        force: true
+
+    - name: Generate client private keys
+      openssl_privatekey:
+        path: "{{ koji_certs_work }}/{{ item }}.key"
+      loop:
+        "{{ koji_client_certs }}"
+
+    - name: Generate client CSRs
       openssl_csr:
         path: "{{ koji_certs_work }}/{{ item }}.csr"
         privatekey_path: "{{ koji_certs_work }}/{{ item }}.key"
         common_name: "{{ item }}"
       loop:
-        "{{ koji_certs_basic }}"
+        "{{ koji_client_certs }}"
 
     - name: Sign client CSRs
       openssl_certificate:
@@ -78,18 +95,24 @@
         csr_path: "{{ koji_certs_work }}/{{ item }}.csr"
         ownca_path: "{{ koji_certs_final }}/koji-ca.crt"
         ownca_privatekey_path: "{{ koji_certs_work }}/koji-ca.key"
-        # Generate the certificate even if it already exists,
-        # otherwise an expired certificate would not be overwritten
         force: true
-      with_items:
-        - koji-hub
-        - "{{ koji_certs_basic }}"
+      loop:
+        "{{ koji_client_certs }}"
 
     - name: Append private keys to client certificates, save as .pem files
       assemble:
         dest: "{{ koji_certs_final }}/{{ item }}.pem"
         src: "{{ koji_certs_work }}"
         regexp: "{{ item }}\\.(crt|key)"
-      with_items:
-        - koji-hub
-        - "{{ koji_certs_basic }}"
+      loop:
+        "{{ koji_client_certs }}"
+
+    - name: Generate PKCS#12 client certificates for browsers
+      openssl_pkcs12:
+        path: "{{ koji_certs_final }}/{{ item }}.p12"
+        privatekey_path: "{{ koji_certs_work }}/{{ item }}.key"
+        certificate_path: "{{ koji_certs_work }}/{{ item }}.crt"
+        friendly_name: "{{ item }}"
+        mode: 0644
+      loop:
+        "{{ koji_client_certs }}"

@@ -11,6 +11,9 @@ RUN dnf -y install "git-core" && \
 COPY bin/ /usr/local/bin/
 COPY etc/ /etc/
 
+# Certificates are added in mode 0600 by openshift, but apache needs read access
+RUN chmod -R o+r /etc/pki/koji/
+
 # Setup for eliminating differences between python versions
 ENV PY_VER_MAJOR="3" \
     PY_VER_MAJOR_MINOR="3.7"
