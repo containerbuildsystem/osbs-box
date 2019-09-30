@@ -17,5 +17,10 @@ RUN $PIP install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
 COPY bin/ /usr/local/bin/
 COPY etc/ /etc/
 
+ENV HUB_HOST="localhost"
+
+RUN add-koji-profile.sh "kojiadmin" && \
+    pick-koji-profile.sh "kojiadmin"
+
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["httpd", "-D", "FOREGROUND"]

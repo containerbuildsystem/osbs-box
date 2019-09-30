@@ -1,27 +1,24 @@
-[koji]
+[$KOJI_USER]
 
 ;configuration for koji cli tool
 
 ;url of XMLRPC server
-server = https://koji-hub/kojihub
+server = https://$HUB_HOST/kojihub
 
 ;url of web interface
-weburl = https://koji-hub/koji
+weburl = https://$HUB_HOST/koji
 
 ;url of package download site
-topurl = https://koji-hub/kojifiles
-
-;path to the koji top directory
-;topdir = /mnt/koji
+topurl = https://$HUB_HOST/kojifiles
 
 ;configuration for SSL authentication
 authtype = ssl
 
 ;client certificate
-cert = ~/.koji/client.pem
+cert = /etc/pki/koji/$KOJI_USER.pem
 
 ;certificate of the CA that issued the HTTP server certificate
-serverca = ~/.koji/serverca.crt
+serverca = /etc/pki/koji/koji-ca.crt
 
 ;plugin paths, separated by ':' as the same as the shell's PATH
 ;koji_cli_plugins module and ~/.koji/plugins are always loaded in advance,
@@ -31,7 +28,7 @@ serverca = ~/.koji/serverca.crt
 ;[not_implemented_yet]
 ;enabled plugins for CLI, runroot and save_failed_tree are available
 ;runroot plugin is enabled by default in fedora
-plugins = runroot cli_containerbuild
+plugins = $CLI_PLUGINS
 
 ;timeout of XMLRPC requests by seconds, default: 60 * 60 * 12 = 43200
 ;timeout = 43200
@@ -41,6 +38,3 @@ plugins = runroot cli_containerbuild
 
 ;use the fast upload feature of koji by default
 use_fast_upload = yes
-
-;TODO: There was a [koji-containerbuild] section in the previous Box with the
-;same settings as the [koji] one. Why was it there?

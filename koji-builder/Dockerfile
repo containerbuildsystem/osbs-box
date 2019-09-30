@@ -16,5 +16,8 @@ RUN $PIP install -U "$OSBS_CLIENT_PIP_REF" && \
 COPY bin/ /usr/local/bin/
 COPY etc/ /etc/
 
+RUN add-koji-profile.sh "kojiadmin" && \
+    pick-koji-profile.sh "kojiadmin"
+
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["kojid", "--fg", "--force-lock", "--verbose"]

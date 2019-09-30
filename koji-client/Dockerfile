@@ -10,5 +10,10 @@ RUN $PIP install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
 
 COPY bin/ /usr/local/bin/
 
+ENV CLI_PLUGINS="runroot cli_containerbuild"
+
+RUN add-koji-profile.sh "kojiadmin" && \
+    pick-koji-profile.sh "kojiadmin"
+
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["sleep", "infinity"]
