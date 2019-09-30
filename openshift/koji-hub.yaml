@@ -21,6 +21,11 @@ parameters:
     value: master
     required: true
 
+  - name: OSBS_BOX_HOST
+    description: Hostname of the machine running OSBS-Box
+    value: localhost
+    required: true
+
 labels:
   app: koji-hub
 
@@ -116,9 +121,12 @@ objects:
     metadata:
       name: koji-hub
     spec:
-      host: ""  # will be auto-generated
+      host: koji-hub.${OSBS_BOX_HOST}
       to:
         kind: Service
         name: koji-hub
       port:
-        targetPort: "80"
+        targetPort: "443"
+      tls:
+        termination: passthrough
+        insecureEdgeTerminationPolicy: Redirect
