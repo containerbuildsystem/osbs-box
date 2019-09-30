@@ -7,10 +7,7 @@ if ! timeout 60 moshimoshi.sh; then
     exit 124
 fi
 
-# Set up kojibuilder
-if ! koji list-hosts | grep -q "kojibuilder"; then
-    koji add-host "kojibuilder" x86_64
-    koji add-host-to-channel --new "kojibuilder" "container"
-fi
+# Set up koji
+koji-setup.sh
 
 exec "$@"
