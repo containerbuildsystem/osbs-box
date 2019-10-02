@@ -1,137 +1,177 @@
-# OSBS Box
+# OSBS-Box
 
-A set of containers that emulate a OSBS deployment.
+An OpenShift based project that provides a local environment for testing OSBS components.
 
-## Getting Started
+Currently, this environment is not yet complete (except for the Koji part).
 
-`osbs-box` assumes you have your system configured to run `oc cluster up`.
 
-* Follow [instructions](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md) for your platform.
-* `osbs-box` assumes a Docker bridge network container subnet of 172.17.0.0/16 and it having set gateway(this is not true on Fedora 26 and older, out of the box docker installations)
-* You will need `docker-compose` in addition to `docker` itself.
+## How-to
 
-```
-# Start osbs-box
-python ./osbs-box.py up
+OSBS-Box is primarily intended for use with OpenShift clusters created using `oc cluster up`.
 
-# Check status
-python ./osbs-box.py status
+Setting one up should be as simple as:
 
-# Destroy osbs-box box
-python ./osbs-box down
-
-# Rebuild existing container images with updates enabled
-python ./osbs-box up --force-rebuild --updates
-
-# Build a RHEL7-based images
-python ./osbs-box up --distro rhel7 --repo-url=...
+```bash
+$ dnf install origin-clients
+$ oc cluster up
 ```
 
-## Submitting Builds
-
-```
-# On client container
-koji container-build candidate \
-    git://github.com/lcarva/docker-hello-world#origin/osbs-box-demo \
-    --git-branch osbs-box-demo
-
-# Or from the host (useful for retaining bash history between runs)
-docker exec -it osbsbox_koji-client_1 koji container-build candidate \
-    git://github.com/lcarva/docker-hello-world#origin/osbs-box-demo \
-    --git-branch osbs-box-demo
-```
-
-## Containers
-
-### Koji Hub
-https://docs.pagure.org/koji/server_howto/#koji-hub
-
-Additional components:
-* web interface
-* koji-containerbuild plugin
-
-Ports 80 and 443 are mapped to workstation.
-Access console via https://localhost/koji
-
-### Koji Builder
-https://docs.pagure.org/koji/server_howto/#koji-daemon-builder
-
-Additional components:
-* koji-containerbuild plugin
-
-### Koji DB
-https://docs.pagure.org/koji/server_howto/#postgresql-server
-
-## Openshift
-A working OpenShift cluster is needed for full functionality.
-It's recommended to set one up via
-[`oc cluster up`](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md)
-
-See Getting Started section below for commands.
-
-Once configured, console can be accessed via https://localhost:8443
-Username: osbs
-Password: osbs
-Namespace: osbs
-
-### Shared Data
-A data volume container used to store shared data between
-the containers:
-* Certificates used by koji
-* Koji client configuration files
-
-### Client
-Combination of client tools used to interact with other services
-* osbs-client
-* koji-cli
-* koji-containerbuild-cli
+For more details, refer to
+[the OKD documentation](https://docs.okd.io/latest/getting_started/administrators.html#running-in-a-docker-container).
 
 
-## Using Koji CLI
+### Prerequisites
 
-```
-# On client container
-koji hello
+* ansible
+* an OpenShift cluster, as described above
+
+
+### Deploying OSBS-Box
+
+1. If you haven't already, `git clone` this repository
+2. Take a look at the [configuration file](group_vars/all.yaml)
+3. Run `ansible-playbook generate-certs.yaml`
+4. Run `ansible-playbook start-koji.yaml`
+
+__NOTE__: Rather than changing the configuration in __group_vars/all.yaml__, you might want to
+create a file containing your overrides (e.g. __overrides.yaml__) and run the playbooks like this:
+
+```bash
+$ ansible-playbook <playbook> -e '@overrides.yaml'
 ```
 
-## Koji Web Interface
+__NOTE__: The __start-koji.yaml__ playbook only starts the build, it does not wait for the entire
+deployment to finish. You can check the deployment status in the web console or with `oc status`.
 
-Inspect koji-hub container logs to view link for accessing web interface:
+
+### Using OSBS-Box
+
+After deployment, you're going to want to give your OpenShift user (the default being _developer_)
+admin privileges:
+
+```bash
+$ oc adm policy add-cluster-role-to-user cluster-admin <user>
+```
+
+#### OpenShift console
+
+Located at https://localhost:8443/console/ by default. To log in as _developer_, use any password.
+
+After navigating to the koji project, you will see all the koji pods, you can view their logs,
+open terminals in them etc.
+
+#### OpenShift CLI
+
+Generally, anything you can do in the console, you can do with `oc`.  Just make sure you are in
+the right project (_koji_ by default).
+
+Setting up command completion for `oc` is highly advisable, because pods do not have fixed names.
+
+To run a command in a container from the command line (for example, `koji hello` on the client):
+
+```bash
+$ oc rsh koji-client<Tab> koji hello    # With completion
+
+$ oc get pod --selector app=koji-client
+$ oc rsh <pod name from previous command> koji hello    # Without completion
+```
+
+Using `oc rsh <pod name>` without a command opens a remote shell in the specified pod.
+
+#### Koji website
+
+The koji-hub OpenShift app provides an external route where you can access the koji website.
+You can find the URL in the console or with `oc get route koji-hub`. By default, it is
+https://koji-hub.localhost/. Here, you can view information about your Koji instance.
+
+To log in to the website, you will first need to import a client certificate into your browser.
+These certificates are generated by the __generate-certs.yaml__ playbook and can be found in
+the koji certificates directory (__~/.local/share/osbs-box/koji-certs/final/__ by default).
+There is one for each koji user (by default, only _kojiadmin_ and _kojiosbs_ are users, but
+logging in creates a user automatically).
+
+#### Koji CLI (local)
+
+Coming soon<sup>TM</sup>
+
+
+### Updating OSBS-Box
+
+In general, there are two reasons why you might want to update your OSBS-Box instance:
+
+* Changes in OSBS-Box itself
+* Changes in other OSBS components
+
+In both cases, what you want to do is:
+
+1. Specify your overrides in a file
+    * e.g. __repo__, __branch__ for the OSBS components you want to test
+2. Run the __start-koji.yaml__ playbook with your overrides
+    * __NOTE__: you do not need to run the __generate-certs.yaml__ playbook unless they are
+      expired, but if you do run it, you will need to reimport them into your browser
+
+__NOTE__: When working on OSBS-Box code, to test changes concerning any of the pieces used to
+build Docker images, you will need to __push the changes first__ before running the playbook,
+because OpenShift gets the code for builds from git. Alternatively, instead of using the playbook,
+you can just `oc start-build <the component you changed> --from-dir .`.
+
+
+### Cleaning up
+
+There are multiple reasons why you might want to clean up OSBS-Box data:
+
+* You've done some koji setup, but now you need to undo it
+* For some reason, updating your OSBS-Box failed (and it is not because of the code)
+* You are done with OSBS-Box (forever)
+
+Cleanup steps:
+
+1. Delete everything in the koji namespace: `oc delete namespace <koji namespace>`
+2. Delete koji PVs from OpenShift: `oc delete pv --selector volume=koji-volume`
+3. Delete the persistent volume directories
+    * __~/.local/share/osbs-box/pv/*__ by default
+    * They tend to be owned by other users, you may need `sudo`
+5. _OPTIONAL_: Delete all the remaining data
+    * __~/.local/share/osbs-box/__ by default
+    * You should never _need_ to do this - unless you are breaking up with OSBS-Box :cry:
+
+You may also want to:
+
+* Remove the docker images built/pulled by OpenShift
+    * You will find them in your local registry, like normal docker images
+* Run `oc cluster down` and remove the data left behind by `oc cluster up`
+    * Volumes that were mounted by OpenShift and never unmounted
+      ```bash
+      $ mount | grep openshift | while read mountpoint; do sudo umount $mountpoint; done
+      ```
+    * The __openshift.local.clusterup/__ directory created when you ran `oc cluster up`
+      (or whatever you passed as the `--base-dir` param to `oc cluster up`)
+
+In the future, there may be an extra playbook that will do the cleanup for you.
+
+
+## Project structure
+
+Coming soon<sup>TM</sup>
+
+
+## Known issues
+
+### Koji website login bug
+
+__Problem__:
 
 ```
-docker-compose logs koji-hub
+An error has occurred in the web interface code. This could be due to a bug or a configuration issue.
+koji.AuthError: could not get user for principal: <user> 
 ```
 
-Example:
-```
-koji-hub_1      | + '[' '!' -e /docker-init ']'
-koji-hub_1      | + mkdir -p /root/.koji
-koji-hub_1      | + ln -fs /opt/koji-clients/kojiadmin/config /root/.koji/config
-koji-hub_1      | + touch /docker-init
-koji-hub_1      | ++ hostname -I
-koji-hub_1      | + for ip in '`hostname -I`'
-koji-hub_1      | + echo http://172.19.0.6/koji
-koji-hub_1      | + echo http://172.19.0.6/kojifiles
-koji-hub_1      | + exec httpd -D FOREGROUND
-koji-hub_1      | [Thu Oct 06 15:18:37.651360 2016] [so:warn] [pid 1] AH01574: module ssl_module is already loaded, skipping
+__Reproduce__:
 
-```
-In this case, accessing http://172.19.0.6/koji from your browser shows koji's
-web interface. http://172.19.0.6/kojifiles displays a directly listing of
-/mnt/koji
+1. Log in to the koji website as a user that is neither _kojiadmin_ nor _kojiosbs_
+2. Bring koji down without logging out of the website 
+3. Remove koji database persistent data
+4. Bring koji back up, go to the website
+5. Congratulations, koji now thinks a non-existent user is logged in
 
-## Common Questions/Known Issues
-
-#### Unable to look up hostnames
-OpenShift build may fail with an error like this:
-
-`fatal: Unable to look up github.com (port 9418) (Name or service not known)`
-
-This seems to be due to docker not watching for iptables changes, to resolve:
-
-```
-sudo systemctl stop docker
-sudo iptables -F
-sudo iptables -t nat -F
-sudo systemctl start docker
-```
+__Solution__: clear cookies, reload website
