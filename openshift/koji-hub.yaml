@@ -1,0 +1,132 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: koji-hub
+  description: >
+    Koji-hub serves as the interface between clients and the database. It serves
+    the koji webpage and handles requests made from the CLI.
+
+    Exposes ports 80 and 443 internally (for koji-client and koji-builder). Port
+    80 is also exposed externally, using a generated hostname. Here, users can
+    access the koji website (at http://<generated-hostname>/koji).
+
+parameters:
+  - name: OSBS_BOX_REPO
+    description: Repository to build the image from
+    value: https://github.com/containerbuildsystem/osbs-box
+    required: true
+
+  - name: OSBS_BOX_VERSION
+    description: Branch/tag/commit within the repository specified above
+    value: master
+    required: true
+
+  - name: OSBS_BOX_HOST
+    description: Hostname of the machine running OSBS-Box
+    value: localhost
+    required: true
+
+labels:
+  app: koji-hub
+
+objects:
+  - kind: ImageStream
+    apiVersion: v1
+    metadata:
+      name: koji-hub
+      labels:
+        app: koji-hub
+    spec: {}
+
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: koji-hub
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${OSBS_BOX_REPO}
+          ref: ${OSBS_BOX_VERSION}
+        contextDir: koji-hub
+      strategy:
+        type: Docker
+        dockerStrategy:
+          from:
+            kind: ImageStreamTag
+            name: koji-base:latest
+      output:
+        to:
+          kind: ImageStreamTag
+          name: koji-hub:latest
+      triggers:
+        - type: ImageChange
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: koji-hub
+    spec:
+      replicas: 1
+      selector:
+        app: koji-hub
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          name: koji-hub
+          labels:
+            app: koji-hub
+        spec:
+          containers:
+            - name: koji-hub
+              image: koji-hub:latest
+              ports:
+                - containerPort: 80
+                - containerPort: 443
+              volumeMounts:
+                - name: koji-files
+                  mountPath: /mnt/koji
+          volumes:
+            - name: koji-files
+              persistentVolumeClaim:
+                claimName: koji-files
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - koji-hub
+            from:
+              kind: ImageStreamTag
+              name: koji-hub:latest
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: koji-hub
+    spec:
+      selector:
+        app: koji-hub
+      ports:
+        - name: "80"
+          port: 80
+          targetPort: 80
+        - name: "443"
+          port: 443
+          targetPort: 443
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: koji-hub
+    spec:
+      host: koji-hub.${OSBS_BOX_HOST}
+      to:
+        kind: Service
+        name: koji-hub
+      port:
+        targetPort: "443"
+      tls:
+        termination: passthrough
+        insecureEdgeTerminationPolicy: Redirect

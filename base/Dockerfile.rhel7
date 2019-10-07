@@ -1,8 +1,0 @@
-FROM registry.access.redhat.com/rhel7:latest
-MAINTAINER Luiz Carvalho <lucarval@redhat.com>
-
-ARG REPO_URL
-ARG UPDATES
-
-ADD ${REPO_URL} /etc/yum.repos.d/internal.repo
-RUN if [ $UPDATES ]; then yum update -y; fi

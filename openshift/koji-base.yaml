@@ -1,0 +1,75 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: koji-base
+  description: >
+    Koji-base serves as a base image for the other koji components. It is not
+    meant to be run as a container, only built from.
+
+    To successfully build koji-base using this template, you need a koji-certs
+    secret containing all the SSL certificates that will later be needed by the
+    images built from koji-base.
+
+labels:
+  build: koji-base
+
+parameters:
+  - name: OSBS_BOX_REPO
+    description: Repository to build the image from
+    value: https://github.com/containerbuildsystem/osbs-box
+    required: true
+
+  - name: OSBS_BOX_VERSION
+    description: Branch/tag/commit within the repository specified above
+    value: master
+    required: true
+
+  - name: OSBS_CLIENT_PIP_REF
+    description: >
+      Pip URL to install osbs-client from (git+<repo>[@<version>])
+    value: git+https://github.com/containerbuildsystem/osbs-client
+    required: true
+
+  - name: KOJI_CONTAINERBUILD_PIP_REF
+    description: >
+      Pip URL to install koji-containerbuild from (git+<repo>[@<version>])
+    value: git+https://github.com/containerbuildsystem/koji-containerbuild
+    required: true
+
+objects:
+  - kind: ImageStream
+    apiVersion: v1
+    metadata:
+      name: koji-base
+    spec: {}
+
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: koji-base
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${OSBS_BOX_REPO}
+          ref: ${OSBS_BOX_VERSION}
+        contextDir: koji-base
+        secrets:
+          - secret:
+              name: koji-certs
+            destinationDir: etc/pki/koji
+      strategy:
+        type: Docker
+        dockerStrategy:
+          from:
+            kind: DockerImage
+            name: registry.fedoraproject.org/fedora:30
+          buildArgs:
+            - name: OSBS_CLIENT_PIP_REF
+              value: ${OSBS_CLIENT_PIP_REF}
+            - name: KOJI_CONTAINERBUILD_PIP_REF
+              value: ${KOJI_CONTAINERBUILD_PIP_REF}
+      output:
+        to:
+          kind: ImageStreamTag
+          name: koji-base:latest

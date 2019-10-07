@@ -7,7 +7,4 @@ if ! timeout 60 moshimoshi.sh; then
     exit 124
 fi
 
-# Set up koji
-koji-setup.sh
-
 exec "$@"
