@@ -124,16 +124,21 @@ There are multiple reasons why you might want to clean up OSBS-Box data:
 * For some reason, updating your OSBS-Box failed (and it is not because of the code)
 * You are done with OSBS-Box (forever)
 
-Cleanup steps:
+OSBS-Box provides the __cleanup.yaml__ playbook, which does parts of the cleanup for you based
+on what `--tags` you specify:
 
-1. Delete everything in the koji namespace: `oc delete namespace <koji namespace>`
-2. Delete koji PVs from OpenShift: `oc delete pv --selector volume=koji-volume`
-3. Delete the persistent volume directories
-    * __~/.local/share/osbs-box/pv/*__ by default
-    * They tend to be owned by other users, you may need `sudo`
-5. _OPTIONAL_: Delete all the remaining data
-    * __~/.local/share/osbs-box/__ by default
-    * You should never _need_ to do this - unless you are breaking up with OSBS-Box :cry:
+* `openshift_objects`: the koji namespace and koji PV objects in OpenShift
+* `never`: _these tags are not run by default, they have to be specified explicitly_
+    * `box_data`: _all of the below and any leftover data_
+        * `koji_certs`: certificates created by __generate_certs.yaml__
+        * `koji_pvs`: _all of the below, implies `openshift_objects`, needs `sudo`_
+            * `koji_db_data`: koji database PV
+            * `koji_files`: PV used by koji-hub and koji-builder for __/mnt/koji/__
+
+When you run the playbook without any tags, Koji is brought down and all the OpenShift objects are
+deleted, but all other data is kept, including persistent volume directories. If your goal is to
+reset your Koji instance to a clean state, use the `koji_pvs` tag. The other tags not related to
+PVs generally do not ever need to be used, unless you want to get rid of OSBS-Box completely.
 
 You may also want to:
 
@@ -146,8 +151,6 @@ You may also want to:
       ```
     * The __openshift.local.clusterup/__ directory created when you ran `oc cluster up`
       (or whatever you passed as the `--base-dir` param to `oc cluster up`)
-
-In the future, there may be an extra playbook that will do the cleanup for you.
 
 
 ## Project structure
@@ -163,13 +166,13 @@ __Problem__:
 
 ```
 An error has occurred in the web interface code. This could be due to a bug or a configuration issue.
-koji.AuthError: could not get user for principal: <user> 
+koji.AuthError: could not get user for principal: <user>
 ```
 
 __Reproduce__:
 
 1. Log in to the koji website as a user that is neither _kojiadmin_ nor _kojiosbs_
-2. Bring koji down without logging out of the website 
+2. Bring koji down without logging out of the website
 3. Remove koji database persistent data
 4. Bring koji back up, go to the website
 5. Congratulations, koji now thinks a non-existent user is logged in
