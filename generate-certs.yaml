@@ -113,6 +113,5 @@
         privatekey_path: "{{ koji_certs_work }}/{{ item }}.key"
         certificate_path: "{{ koji_certs_work }}/{{ item }}.crt"
         friendly_name: "{{ item }}"
-        mode: 0644
       loop:
         "{{ koji_client_certs }}"
