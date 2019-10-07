@@ -1,0 +1,84 @@
+- name: Clean up everything that was created by OSBS-Box
+  hosts: localhost
+
+  tasks:
+    # Delete all openshift objects (including pods and their containers)
+    - block:
+        - name: Check if openshift cluster is running
+          command: oc whoami
+          register: whoami
+          changed_when: false
+          # Do not fail if cluster is not running
+          failed_when: >
+            whoami.rc != 0 and not (
+              'The connection to the server' in whoami.stderr and
+              'was refused' in whoami.stderr
+            )
+
+        - name: Login as openshift admin
+          command: oc login -u system:admin
+          changed_when: whoami.stdout != 'system:admin'
+          when: whoami.rc == 0  # Do not attempt if cluster is not running
+
+        - name: Delete the koji namespace (and everything in it)
+          command: oc delete namespace "{{ koji_namespace }}"
+          register: delete_namespace
+          changed_when: delete_namespace.rc == 0
+          failed_when: delete_namespace.rc != 0 and
+                       'not found' not in delete_namespace.stderr
+          when: whoami.rc == 0
+
+        - name: Delete koji PVs from openshift
+          command: oc delete pv --selector volume=koji-volume
+          register: delete_pvs
+          changed_when: delete_pvs.rc == 0 and
+                        delete_pvs.stdout != 'No resources found'
+          failed_when: delete_pvs.rc != 0
+          when: whoami.rc == 0
+      tags:
+        - openshift_objects
+        # Tags related to PVs (deleting PVs while still in use is a bad idea)
+        - koji_pvs
+        - koji_db_data
+        - koji_files
+        - box_data
+
+    - block:
+        - name: Delete koji-db-data PV directory
+          file:
+            path: "{{ koji_db_data_dir }}"
+            state: absent
+          tags:
+            - koji_db_data
+
+        - name: Delete koji-files PV directory
+          file:
+            path: "{{ koji_files_dir }}"
+            state: absent
+          tags:
+            - koji_files
+      become: true
+      tags:
+        - never
+        - koji_pvs
+        - box_data
+
+    - name: Delete koji certificate directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ koji_certs_work }}"
+        - "{{ koji_certs_final }}"
+      tags:
+        - never
+        - koji_certs
+        - box_data
+
+    - name: Delete all remaining OSBS-Box data
+      file:
+        path: "{{ osbs_box_data_dir }}"
+        state: absent
+      tags:
+        - never
+        - box_data
