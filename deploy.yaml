@@ -1,0 +1,135 @@
+- name: Prepare for deployment
+  hosts: localhost
+  tags:
+    - always
+
+  tasks:
+    - name: Check if we are logged in as openshift admin
+      command: oc whoami
+      register: whoami
+      changed_when: false
+
+    - name: Login as openshift admin
+      command: oc login -u system:admin
+      changed_when: whoami.stdout != 'system:admin'
+
+    - name: Make sure directory for openshift files exists
+      file:
+        path: "{{ openshift_files }}"
+        state: directory
+
+    - name: Process parameters file and put it in openshift files dir
+      template:
+        src: openshift/osbs-box.env.j2
+        dest: "{{ openshift_files }}/osbs-box.env"
+
+
+- name: Run koji containers on openshift
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # This is a constant, please do not override
+    koji_components:
+      - koji-volumes
+      - koji-base
+      - koji-client
+      - koji-builder
+      - koji-db
+      - koji-hub
+  tags:
+    - koji
+
+  tasks:
+    - name: Create koji namespace in openshift
+      command: oc create namespace "{{ koji_namespace }}"
+      register: create_koji_namespace
+      failed_when: create_koji_namespace.rc != 0
+                   and "already exists" not in create_koji_namespace.stderr
+      changed_when: create_koji_namespace.rc == 0
+
+    - name: Create koji-certs secret in koji namespace
+      shell:
+        set -o pipefail;
+        oc create secret generic koji-certs --from-file "{{ koji_certs_final }}"
+                                            --dry-run
+                                            --output json |
+        oc --namespace "{{ koji_namespace }}" replace --force -f -
+      changed_when: true
+
+    - name: Copy openshift templates for koji components to openshift files dir
+      copy:
+        src: "openshift/{{ item }}.yaml"
+        dest: "{{ openshift_files }}/{{ item }}.yaml"
+      loop:
+        "{{ koji_components }}"
+
+    - name: Create openshift resources for all koji components
+      shell:
+        set -o pipefail;
+        oc process -f "{{ openshift_files }}/{{ item }}.yaml"
+                   --param-file "{{ openshift_files }}/osbs-box.env"
+                   --ignore-unknown-parameters |
+        oc --namespace "{{ koji_namespace }}" apply -f -
+      changed_when: true
+      loop:
+        "{{ koji_components }}"
+
+    - name: Set up directories that will serve as backing storage for koji PVs
+      file:
+        path: "{{ item }}"
+        state: directory
+        setype: container_file_t
+      loop:
+        - "{{ koji_files_dir }}"
+        - "{{ koji_db_data_dir }}"
+
+    - name: Allow koji containers to run as any user
+      command:
+        oc --namespace "{{ koji_namespace }}" adm policy add-scc-to-user anyuid
+           --serviceaccount default
+      changed_when: true
+
+    - name: Build (and automatically deploy) koji components
+      command: oc --namespace "{{ koji_namespace }}" start-build koji-base
+      changed_when: true
+
+
+- name: Run registry container on openshift
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - registry
+
+  tasks:
+    - name: Create registry namespace in openshift
+      command: oc create namespace "{{ registry_namespace }}"
+      register: create_registry_namespace
+      failed_when: create_registry_namespace.rc != 0
+                   and "already exists" not in create_registry_namespace.stderr
+      changed_when: create_registry_namespace.rc == 0
+
+    - name: Set up directory for registry PV storage
+      file:
+        path: "{{ registry_data_dir }}"
+        state: directory
+        setype: container_file_t
+
+    - name: Allow registry container to run as any user
+      command:
+        oc --namespace "{{ registry_namespace }}" adm policy add-scc-to-user
+           anyuid --serviceaccount default
+      changed_when: true
+
+    - name: Copy osbs-registry template to openshift files dir
+      copy:
+        src: openshift/osbs-registry.yaml
+        dest: "{{ openshift_files }}/osbs-registry.yaml"
+
+    - name: Deploy osbs-registry
+      shell:
+        set -o pipefail;
+        oc process -f "{{ openshift_files }}/osbs-registry.yaml"
+                   --param-file "{{ openshift_files }}/osbs-box.env"
+                   --ignore-unknown-parameters |
+        oc --namespace "{{ registry_namespace }}" apply -f -
+      changed_when: true
