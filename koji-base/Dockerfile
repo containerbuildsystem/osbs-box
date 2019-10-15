@@ -18,6 +18,9 @@ ENV PY_VER_MAJOR="3" \
 ENV PYTHON="python${PY_VER_MAJOR_MINOR}" \
     PIP="pip${PY_VER_MAJOR_MINOR}"
 
+# By default, pip3 installs stuff in /usr/local/
+ENV PIP_PREFIX="/usr"
+
 # Pip URLs for osbs-client and koji-containerbuild (git+<repo>[@<version>])
 ARG OSBS_CLIENT_PIP_REF
 ARG KOJI_CONTAINERBUILD_PIP_REF
