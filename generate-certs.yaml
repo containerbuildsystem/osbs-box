@@ -61,7 +61,7 @@
           - "DNS:localhost"   # Same pod
           - "DNS:koji-hub"  # Different pod in the same namespace
           - "DNS:koji-hub.{{ koji_namespace }}"   # Pod in different namespace
-          - "DNS:koji-hub.{{ inventory_hostname }}"  # External route
+          - "DNS:koji-hub.{{ osbs_box_host }}"  # External route
 
     - name: Sign koji-hub CSR
       openssl_certificate:
