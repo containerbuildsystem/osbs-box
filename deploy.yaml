@@ -61,20 +61,31 @@
         oc --namespace "{{ koji_namespace }}" replace --force -f -
       changed_when: true
 
-    - name: Process koji-builder osbs.conf template, put in openshift files dir
+    - name: Process koji config templates, output in openshift files dir
       template:
-        src: openshift/configs/koji-builder-osbs.conf.j2
-        dest: "{{ openshift_files }}/koji-builder-osbs.conf"
+        src: "openshift/configs/{{ item }}.j2"
+        dest: "{{ openshift_files }}/{{ item }}"
+      loop:
+        - koji-builder-osbs.conf
+        - koji-hub-web.conf
 
-    - name: Create koji-builder-osbs configMap in koji namespace
+    - name: Create kojiweb and osbs-client configmaps in koji namespace
       shell:
         set -o pipefail;
-        oc create configmap koji-builder-osbs
-            --from-file "osbs.conf={{ openshift_files }}/koji-builder-osbs.conf"
+        oc create configmap "{{ item.name }}"
+            --from-file "{{ item.dest }}={{ openshift_files }}/{{ item.src }}"
             --dry-run
             --output json |
         oc --namespace "{{ koji_namespace }}" replace --force -f -
       changed_when: true
+      loop:
+        - name: koji-builder-osbs
+          src: koji-builder-osbs.conf
+          dest: osbs.conf
+
+        - name: koji-hub-web
+          src: koji-hub-web.conf
+          dest: web.conf
 
     - name: Copy openshift templates for koji components to openshift files dir
       copy:
