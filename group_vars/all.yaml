@@ -19,8 +19,18 @@ osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
 
 ### Openshift settings
 
+# URL of your openshift cluster, needs to be reachable from inside containers
+openshift_url: "https://{{ ansible_default_ipv4.address }}:8443"
+
+# Openshift user that will be used to trigger builds (does not have to exist)
+# This user will be given cluster-admin privileges
+openshift_user: osbs
+openshift_password: osbs
+
 # Namespaces for various OSBS-Box pieces
 koji_namespace: koji
+orchestrator_namespace: osbs
+worker_namespace: worker
 registry_namespace: osbs-registry
 
 
@@ -44,7 +54,7 @@ dockpulp_version: master
 
 ### Data directories
 
-# Directory for openshift files
+# Directory for openshift files (templates, configs)
 openshift_files: "{{ osbs_box_data_dir }}/openshift"
 
 # Directories where koji certificates will be kept

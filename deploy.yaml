@@ -13,6 +13,11 @@
       command: oc login -u system:admin
       changed_when: whoami.stdout != 'system:admin'
 
+    - name: Make "{{ openshift_user }}" an openshift cluster admin
+      command: oc adm policy add-cluster-role-to-user
+                  cluster-admin "{{ openshift_user }}"
+      changed_when: true
+
     - name: Make sure directory for openshift files exists
       file:
         path: "{{ openshift_files }}"
@@ -53,6 +58,21 @@
         oc create secret generic koji-certs --from-file "{{ koji_certs_final }}"
                                             --dry-run
                                             --output json |
+        oc --namespace "{{ koji_namespace }}" replace --force -f -
+      changed_when: true
+
+    - name: Process koji-builder osbs.conf template, put in openshift files dir
+      template:
+        src: openshift/configs/koji-builder-osbs.conf.j2
+        dest: "{{ openshift_files }}/koji-builder-osbs.conf"
+
+    - name: Create koji-builder-osbs configMap in koji namespace
+      shell:
+        set -o pipefail;
+        oc create configmap koji-builder-osbs
+            --from-file "osbs.conf={{ openshift_files }}/koji-builder-osbs.conf"
+            --dry-run
+            --output json |
         oc --namespace "{{ koji_namespace }}" replace --force -f -
       changed_when: true
 
@@ -133,3 +153,87 @@
                    --ignore-unknown-parameters |
         oc --namespace "{{ registry_namespace }}" apply -f -
       changed_when: true
+
+
+- name: Set up OSBS orchestrator and worker namespaces
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # This is a constant, please do not override
+    namespaces:
+      - "{{ orchestrator_namespace }}"
+      - "{{ worker_namespace }}"
+  tags:
+    - namespaces
+
+  tasks:
+    - name: Create orchestrator and worker namespaces in openshift
+      command: oc create namespace "{{ item }}"
+      register: create_namespace
+      failed_when: create_namespace.rc != 0
+                   and "already exists" not in create_namespace.stderr
+      changed_when: create_namespace.rc == 0
+      loop:
+        "{{ namespaces }}"
+
+    - name: Create kojisecret in orchestrator and worker namespaces
+      shell:
+        set -o pipefail;
+        oc create secret generic kojisecret
+            --from-file "cert={{ koji_certs_final }}/kojiosbs.pem"
+            --from-file "ca={{ koji_certs_final }}/koji-ca.crt"
+            --from-file "serverca={{ koji_certs_final }}/koji-ca.crt"
+            --dry-run
+            --output json |
+        oc --namespace "{{ item }}" replace --force -f -
+      changed_when: true
+      loop:
+        "{{ namespaces }}"
+
+    - name: Query openshift for osbs-registry IP
+      command: oc --namespace "{{ registry_namespace }}" get svc osbs-registry
+                  --output 'jsonpath={ .spec.clusterIP }'
+      register: registry_ip_query
+      changed_when: false
+
+    - name: Set registry_ip fact (needed for orchestrator config templates)
+      set_fact:
+        registry_ip: "{{ registry_ip_query.stdout }}"
+
+    - name: Process orchestrator config templates, output in openshift files dir
+      template:
+        src: "openshift/configs/{{ item }}.j2"
+        dest: "{{ openshift_files }}/{{ item }}"
+      loop:
+        - reactor-config-map.yaml
+        - client-config-secret.conf
+
+    - name: Create reactor-config-map in orchestrator namespace
+      shell:
+        set -o pipefail;
+        oc create configmap reactor-config-map
+          --from-file "config.yaml={{ openshift_files }}/reactor-config-map.yaml"
+          --dry-run
+          --output json |
+        oc --namespace "{{ orchestrator_namespace }}" replace --force -f -
+      changed_when: true
+
+    - name: Create client-config-secret in orchestrator namespace
+      shell:
+        set -o pipefail;
+        oc create secret generic client-config-secret
+          --from-file "osbs.conf={{ openshift_files }}/client-config-secret.conf"
+          --dry-run
+          --output json |
+        oc --namespace "{{ orchestrator_namespace }}" replace --force -f -
+      changed_when: true
+
+    - name: Add necessary roles to builder serviceaccounts
+      command: oc --namespace "{{ item.0 }}" adm policy
+                  add-role-to-user "{{ item.1 }}" -z builder
+      loop:
+        "{{ namespaces | product(roles) | list }}"
+      vars:
+        roles:
+          - "edit"
+          - "system:build-strategy-custom"

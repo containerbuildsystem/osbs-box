@@ -41,6 +41,10 @@ objects:
           uri: ${OSBS_BOX_REPO}
           ref: ${OSBS_BOX_VERSION}
         contextDir: koji-builder
+        configMaps:
+          - configMap:
+              name: koji-builder-osbs
+            destinationDir: etc/
       strategy:
         type: Docker
         dockerStrategy:
