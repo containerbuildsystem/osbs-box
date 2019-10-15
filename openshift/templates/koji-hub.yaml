@@ -49,6 +49,10 @@ objects:
           uri: ${OSBS_BOX_REPO}
           ref: ${OSBS_BOX_VERSION}
         contextDir: koji-hub
+        configMaps:
+          - configMap:
+              name: koji-hub-web
+            destinationDir: etc/kojiweb/
       strategy:
         type: Docker
         dockerStrategy:
