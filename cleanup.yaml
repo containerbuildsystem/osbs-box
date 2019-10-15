@@ -99,6 +99,9 @@
       when: whoami.rc == 0
 
 
+# TODO: Delete OSBS buildroot
+
+
 - name: Delete persistent volume data
   hosts: localhost
   gather_facts: false

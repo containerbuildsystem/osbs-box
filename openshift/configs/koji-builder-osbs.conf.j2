@@ -6,7 +6,7 @@ openshift_required_version = 3.6.0
 [default]
 openshift_url = {{ openshift_url }}
 namespace = {{ orchestrator_namespace }}
-build_image = osbs-box/buildroot
+build_from = image:osbs-box/buildroot
 reactor_config_map = reactor-config-map
 build_type = prod
 can_orchestrate = true
@@ -19,7 +19,7 @@ password = {{ openshift_password }}
 [scratch]
 openshift_url = {{ openshift_url }}
 namespace = {{ orchestrator_namespace }}
-build_image = osbs-box/buildroot
+build_from = image:osbs-box/buildroot
 reactor_config_map = reactor-config-map
 build_type = prod
 can_orchestrate = true
