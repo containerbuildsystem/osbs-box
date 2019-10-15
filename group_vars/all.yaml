@@ -16,6 +16,14 @@ allow_pkg_install: false
 # Directory for keeping miscellanous osbs-box data
 osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
 
+# URL of the host running OSBS-Box, see https://nip.io/.
+# External routes for OSBS-Box components will use the following scheme:
+#   <name of service>.$osbs_box_host
+# NOTE:
+#   You *can* use localhost here if you are using OSBS-Box locally, however,
+#   doing so will make external URLs unreachable from inside containers.
+osbs_box_host: "{{ ansible_default_ipv4.address }}.nip.io"
+
 
 ### Openshift settings
 
