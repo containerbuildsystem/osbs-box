@@ -54,7 +54,7 @@ dockpulp_version: master
 
 ### Data directories
 
-# Directory for openshift files (templates, configs)
+# Directory for openshift files (templates, params, configs)
 openshift_files: "{{ osbs_box_data_dir }}/openshift"
 
 # Directories where koji certificates will be kept
