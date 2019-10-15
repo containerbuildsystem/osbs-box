@@ -14,6 +14,10 @@ RUN dnf -y install "httpd" \
 RUN $PIP install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
     copy-kcb-plugin.sh "hub"
 
+# Certificates are mode 0600 and owned by root, apache needs read access too
+RUN chown -R :apache /etc/pki/koji/ && \
+    chmod -R g+r /etc/pki/koji/
+
 COPY bin/ /usr/local/bin/
 COPY etc/ /etc/
 
