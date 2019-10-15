@@ -2,6 +2,7 @@
 ### General settings
 
 # OSBS-Box repository and version (branch, tag or commit ID)
+# Used by openshift when building koji images
 osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
 osbs_box_version: a-new-box
 
@@ -14,6 +15,13 @@ allow_pkg_install: false
 
 # Directory for keeping miscellanous osbs-box data
 osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
+
+
+### Openshift settings
+
+# Namespaces for various OSBS-Box pieces
+koji_namespace: koji
+registry_namespace: osbs-registry
 
 
 ### Repositories and versions for OSBS components
@@ -34,10 +42,10 @@ dockpulp_repo: https://github.com/release-engineering/dockpulp
 dockpulp_version: master
 
 
-### Koji settings
+### Data directories
 
-# Openshift namespace where koji components will live
-koji_namespace: koji
+# Directory for openshift files
+openshift_files: "{{ osbs_box_data_dir }}/openshift"
 
 # Directories where koji certificates will be kept
 koji_certs_work: "{{ osbs_box_data_dir }}/koji-certs/work"  # Intermediate files
@@ -46,3 +54,4 @@ koji_certs_final: "{{ osbs_box_data_dir }}/koji-certs/final"  # Useful output
 # Directories that will serve as the backing storage for persistent volumes
 koji_files_dir: "{{ osbs_box_data_dir }}/pv/koji-files"
 koji_db_data_dir: "{{ osbs_box_data_dir }}/pv/koji-db-data"
+registry_data_dir: "{{ osbs_box_data_dir }}/pv/registry-data"
