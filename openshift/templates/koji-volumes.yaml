@@ -36,7 +36,7 @@ objects:
         # The only supported access mode for HostPaths PVs
         - ReadWriteOnce
       capacity:
-        storage: 1Gi
+        storage: 100Gi
       persistentVolumeReclaimPolicy: Retain
 
   - kind: PersistentVolume
@@ -49,7 +49,7 @@ objects:
       accessModes:
         - ReadWriteOnce
       capacity:
-        storage: 1Gi
+        storage: 100Gi
       persistentVolumeReclaimPolicy: Retain
 
   - kind: PersistentVolumeClaim
@@ -62,7 +62,7 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: 100Gi
 
   - kind: PersistentVolumeClaim
     apiVersion: v1
@@ -74,4 +74,4 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: 100Gi
