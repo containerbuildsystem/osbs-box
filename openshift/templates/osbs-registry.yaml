@@ -32,7 +32,7 @@ objects:
       accessModes:
         - ReadWriteOnce
       capacity:
-        storage: 10Gi
+        storage: 100Gi
       persistentVolumeReclaimPolicy: Retain
 
   - kind: PersistentVolumeClaim
@@ -45,7 +45,7 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 100Gi
 
   - kind: DeploymentConfig
     apiVersion: v1
