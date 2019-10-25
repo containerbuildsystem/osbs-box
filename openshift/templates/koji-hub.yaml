@@ -56,6 +56,7 @@ objects:
       strategy:
         type: Docker
         dockerStrategy:
+          noCache: true
           from:
             kind: ImageStreamTag
             name: koji-base:latest
