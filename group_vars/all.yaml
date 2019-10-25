@@ -36,9 +36,9 @@ openshift_user: osbs
 openshift_password: osbs
 
 # Namespaces for various OSBS-Box pieces
-koji_namespace: koji
-orchestrator_namespace: osbs
-worker_namespace: worker
+koji_namespace: osbs-koji
+orchestrator_namespace: osbs-orchestrator
+worker_namespace: osbs-worker
 registry_namespace: osbs-registry
 
 
