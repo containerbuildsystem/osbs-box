@@ -144,15 +144,15 @@
     - everything
 
   tasks:
-    - name: Delete koji certificate directories
+    - name: Delete certificate directories
       file:
         path: "{{ item }}"
         state: absent
       loop:
-        - "{{ koji_certs_work }}"
-        - "{{ koji_certs_final }}"
+        - "{{ koji_certs_dir }}"
+        - "{{ certificates_dir }}"
       tags:
-        - koji_certs
+        - certificates
 
     - name: Delete openshift files directory
       file:

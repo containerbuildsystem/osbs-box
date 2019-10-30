@@ -55,9 +55,16 @@
     - name: Create koji-certs secret in koji namespace
       shell:
         set -o pipefail;
-        oc create secret generic koji-certs --from-file "{{ koji_certs_final }}"
-                                            --dry-run
-                                            --output json |
+        oc create secret generic koji-certs
+            --from-file "{{ certificates_dir }}/osbs-box-ca.crt"
+            --from-file "{{ koji_certs_dir }}/koji-hub.crt"
+            --from-file "{{ koji_certs_dir }}/koji-hub.key"
+            --from-file "{{ koji_certs_dir }}/kojiweb.pem"
+            --from-file "{{ koji_certs_dir }}/kojibuilder.pem"
+            --from-file "{{ koji_certs_dir }}/kojiadmin.pem"
+            --from-file "{{ koji_certs_dir }}/kojiosbs.pem"
+            --dry-run
+            --output json |
         oc --namespace "{{ koji_namespace }}" replace --force -f -
       changed_when: true
 
@@ -191,9 +198,9 @@
       shell:
         set -o pipefail;
         oc create secret generic kojisecret
-            --from-file "cert={{ koji_certs_final }}/kojiosbs.pem"
-            --from-file "ca={{ koji_certs_final }}/koji-ca.crt"
-            --from-file "serverca={{ koji_certs_final }}/koji-ca.crt"
+            --from-file "cert={{ koji_certs_dir }}/kojiosbs.pem"
+            --from-file "ca={{ certificates_dir }}/osbs-box-ca.crt"
+            --from-file "serverca={{ certificates_dir }}/osbs-box-ca.crt"
             --dry-run
             --output json |
         oc --namespace "{{ item }}" replace --force -f -

@@ -1,12 +1,5 @@
-- name: Generate koji certificates
+- name: Generate all certificates for OSBS-Box
   hosts: localhost
-  vars:
-    # This is a constant, please do not override
-    koji_client_certs:
-      - kojiadmin
-      - kojiosbs
-      - kojibuilder
-      - kojiweb
 
   pre_tasks:
     - name: Make sure python-cryptography package is installed
@@ -16,19 +9,19 @@
       when: allow_pkg_install
       become: true
 
-    - name: Make sure koji certificate directories exist
+    - name: Make sure certificate directories exist
       file:
         path: "{{ item }}"
         state: directory
       loop:
-        - "{{ koji_certs_work }}"
-        - "{{ koji_certs_final }}"
+        - "{{ certificates_dir }}"
+        - "{{ koji_certs_dir }}"
 
   tasks:
     - name: Check if CA certificate exists and has not expired
       openssl_certificate:
         provider: assertonly
-        path: "{{ koji_certs_final }}/koji-ca.crt"
+        path: "{{ certificates_dir }}/osbs-box-ca.crt"
         has_expired: false
       ignore_errors: true
       register: check_ca
@@ -36,13 +29,13 @@
     - block:
         - name: Generate CA private key
           openssl_privatekey:
-            path: "{{ koji_certs_work }}/koji-ca.key"
+            path: "{{ certificates_dir }}/osbs-box-ca.key"
 
         - name: Generate CA CSR
           openssl_csr:
-            path: "{{ koji_certs_work }}/koji-ca.csr"
-            privatekey_path: "{{ koji_certs_work }}/koji-ca.key"
-            common_name: koji-ca
+            path: "{{ certificates_dir }}/osbs-box-ca.csr"
+            privatekey_path: "{{ certificates_dir }}/osbs-box-ca.key"
+            common_name: OSBS-Box
             basic_constraints:
               - "CA:TRUE"
 
@@ -50,9 +43,9 @@
           openssl_certificate:
             provider: selfsigned
             selfsigned_not_after: +365d
-            path: "{{ koji_certs_final }}/koji-ca.crt"
-            csr_path: "{{ koji_certs_work }}/koji-ca.csr"
-            privatekey_path: "{{ koji_certs_work }}/koji-ca.key"
+            path: "{{ certificates_dir }}/osbs-box-ca.crt"
+            csr_path: "{{ certificates_dir }}/osbs-box-ca.csr"
+            privatekey_path: "{{ certificates_dir }}/osbs-box-ca.key"
             # Generate the certificate even if it already exists,
             # otherwise an expired certificate would not be overwritten
             force: true
@@ -61,11 +54,11 @@
     - name: Generate certificates for all koji components
       include_tasks: tasks/generate-ownca-cert.yaml
       vars:
-        dir: "{{ koji_certs_final }}"
+        dir: "{{ koji_certs_dir }}"
         cert: "{{ item }}"
         ca:
-          crt_path: "{{ koji_certs_final }}/koji-ca.crt"
-          key_path: "{{ koji_certs_work }}/koji-ca.key"
+          crt_path: "{{ certificates_dir }}/osbs-box-ca.crt"
+          key_path: "{{ certificates_dir }}/osbs-box-ca.key"
         # If CA certificate changed, recreate everything
         force: "{{ check_ca.failed }}"
       loop:
@@ -80,19 +73,26 @@
         - name: kojiadmin
         - name: kojiosbs
 
-    - name: Combine private keys with certificates, save as .pem files
-      assemble:
-        dest: "{{ koji_certs_final }}/{{ item }}.pem"
-        src: "{{ koji_certs_final }}"
-        regexp: "{{ item }}\\.(crt|key)"
-      loop:
-        "{{ koji_client_certs }}"
+    - block:
+        - name: Combine private keys with certificates, save as .pem files
+          assemble:
+            dest: "{{ koji_certs_dir }}/{{ item }}.pem"
+            src: "{{ koji_certs_dir }}"
+            regexp: "{{ item }}\\.(crt|key)"
+          loop:
+            "{{ koji_client_certs }}"
 
-    - name: Generate PKCS#12 client certificates for browsers
-      openssl_pkcs12:
-        path: "{{ koji_certs_final }}/{{ item }}.p12"
-        privatekey_path: "{{ koji_certs_final }}/{{ item }}.key"
-        certificate_path: "{{ koji_certs_final }}/{{ item }}.crt"
-        friendly_name: "{{ item }}"
-      loop:
-        "{{ koji_client_certs }}"
+        - name: Generate PKCS#12 client certificates for browsers
+          openssl_pkcs12:
+            path: "{{ koji_certs_dir }}/{{ item }}.p12"
+            privatekey_path: "{{ koji_certs_dir }}/{{ item }}.key"
+            certificate_path: "{{ koji_certs_dir }}/{{ item }}.crt"
+            friendly_name: "{{ item }}"
+          loop:
+            "{{ koji_client_certs }}"
+      vars:
+        koji_client_certs:
+          - kojiweb
+          - kojibuilder
+          - kojiadmin
+          - kojiosbs
