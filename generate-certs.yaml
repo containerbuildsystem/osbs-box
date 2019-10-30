@@ -16,6 +16,7 @@
       loop:
         - "{{ certificates_dir }}"
         - "{{ koji_certs_dir }}"
+        - "{{ registry_certs_dir }}"
 
   tasks:
     - name: Check if CA certificate exists and has not expired
@@ -74,7 +75,7 @@
         - name: kojiosbs
 
     - block:
-        - name: Combine private keys with certificates, save as .pem files
+        - name: Combine private keys with koji certificates, save as .pem files
           assemble:
             dest: "{{ koji_certs_dir }}/{{ item }}.pem"
             src: "{{ koji_certs_dir }}"
@@ -82,7 +83,7 @@
           loop:
             "{{ koji_client_certs }}"
 
-        - name: Generate PKCS#12 client certificates for browsers
+        - name: Generate PKCS#12 browser certificates for koji users
           openssl_pkcs12:
             path: "{{ koji_certs_dir }}/{{ item }}.p12"
             privatekey_path: "{{ koji_certs_dir }}/{{ item }}.key"
@@ -96,3 +97,19 @@
           - kojibuilder
           - kojiadmin
           - kojiosbs
+
+    - name: Generate registry certificate
+      include_tasks: tasks/generate-ownca-cert.yaml
+      vars:
+        dir: "{{ registry_certs_dir }}"
+        cert:
+          name: osbs-registry
+          subject_alt_name:
+            - "DNS:localhost"
+            - "DNS:osbs-registry"
+            - "DNS:osbs-registry.{{ registry_namespace }}"
+            - "DNS:osbs-registry.{{ osbs_box_host }}"
+        ca:
+          crt_path: "{{ certificates_dir }}/osbs-box-ca.crt"
+          key_path: "{{ certificates_dir }}/osbs-box-ca.key"
+        force: "{{ check_ca.failed }}"
