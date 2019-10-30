@@ -69,13 +69,22 @@ objects:
               env:
                 - name: REGISTRY_STORAGE_DELETE_ENABLED
                   value: "true"
+                - name: REGISTRY_HTTP_TLS_CERTIFICATE
+                  value: /etc/pki/registry/osbs-registry.crt
+                - name: REGISTRY_HTTP_TLS_KEY
+                  value: /etc/pki/registry/osbs-registry.key
               volumeMounts:
                 - name: registry-data
                   mountPath: /var/lib/registry
+                - name: registry-cert
+                  mountPath: /etc/pki/registry
           volumes:
             - name: registry-data
               persistentVolumeClaim:
                 claimName: registry-data
+            - name: registry-cert
+              secret:
+                secretName: registry-cert
 
   - kind: Service
     apiVersion: v1
@@ -100,3 +109,6 @@ objects:
         name: osbs-registry
       port:
         targetPort: "5000"
+      tls:
+        termination: passthrough
+        insecureEdgeTerminationPolicy: Redirect

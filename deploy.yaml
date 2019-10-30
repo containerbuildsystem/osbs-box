@@ -146,6 +146,17 @@
                    and "already exists" not in create_registry_namespace.stderr
       changed_when: create_registry_namespace.rc == 0
 
+    - name: Create registry-cert secret in openshift
+      shell:
+        set -o pipefail;
+        oc create secret generic registry-cert
+            --from-file "{{ registry_certs_dir }}/osbs-registry.crt"
+            --from-file "{{ registry_certs_dir }}/osbs-registry.key"
+            --dry-run
+            --output json |
+        oc --namespace "{{ registry_namespace }}" replace --force -f -
+      changed_when: true
+
     - name: Set up directory for registry PV storage
       file:
         path: "{{ registry_data_dir }}"
