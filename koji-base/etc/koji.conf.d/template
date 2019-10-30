@@ -18,7 +18,7 @@ authtype = ssl
 cert = /etc/pki/koji/$KOJI_USER.pem
 
 ;certificate of the CA that issued the HTTP server certificate
-serverca = /etc/pki/koji/koji-ca.crt
+serverca = /etc/pki/koji/osbs-box-ca.crt
 
 ;plugin paths, separated by ':' as the same as the shell's PATH
 ;koji_cli_plugins module and ~/.koji/plugins are always loaded in advance,
