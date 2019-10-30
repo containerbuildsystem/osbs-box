@@ -1,0 +1,55 @@
+# Generate a certificate signed by our own CA.
+#
+# First, check if the certificate already exists, has not expired and matches
+# requested parameters. Generate certificate only if the check fails or forced.
+
+# Params:
+#   dir: Directory for the certificate files (key, CSR, CRT)
+#
+#   cert:
+#     name: Common part of filenames (${name}.key, ${name}.csr, ${name}.crt)
+#     common_name: CN for the certificate (default ${name})
+#     subject_alt_name: SANs for the certificate (optional)
+#
+#   ca:
+#     crt_path: Path to CA certificate
+#     key_path: Path to CA private key
+#
+#   force: Generate the certificate even if it passes the check (default False)
+---
+- name: Check if "{{ cert.name }}" certificate exists and is valid
+  openssl_certificate:
+    provider: assertonly
+    path: "{{ dir }}/{{ cert.name }}.crt"
+    has_expired: false
+    subject:
+      CN: "{{ cert.common_name | default(cert.name) }}"
+    subject_alt_name: "{{ cert.subject_alt_name | default(omit) }}"
+  ignore_errors: true
+  register: check_cert
+  when: not (force | default(False))
+
+- block:
+    - name: Generate private key for "{{ cert.name }}"
+      openssl_privatekey:
+        path: "{{ dir }}/{{ cert.name }}.key"
+
+    - name: Generate CSR for "{{ cert.name }}"
+      openssl_csr:
+        path: "{{ dir }}/{{ cert.name }}.csr"
+        privatekey_path: "{{ dir }}/{{ cert.name }}.key"
+        common_name: "{{ cert.common_name | default(cert.name) }}"
+        subject_alt_name: "{{ cert.subject_alt_name | default(omit) }}"
+
+    - name: Sign CSR for "{{ cert.name }}"
+      openssl_certificate:
+        provider: ownca
+        ownca_path: "{{ ca.crt_path }}"
+        ownca_privatekey_path: "{{ ca.key_path }}"
+        ownca_not_after: +365d
+        path: "{{ dir }}/{{ cert.name }}.crt"
+        csr_path: "{{ dir }}/{{ cert.name }}.csr"
+        # Generate the certificate even if it already exists,
+        # otherwise an expired certificate would not be overwritten
+        force: true
+  when: (force | default(False)) or check_cert.failed
