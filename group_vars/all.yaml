@@ -65,9 +65,9 @@ dockpulp_version: master
 # Directory for openshift files (templates, params, configs)
 openshift_files: "{{ osbs_box_data_dir }}/openshift"
 
-# Directories where koji certificates will be kept
-koji_certs_work: "{{ osbs_box_data_dir }}/koji-certs/work"  # Intermediate files
-koji_certs_final: "{{ osbs_box_data_dir }}/koji-certs/final"  # Useful output
+# Directories for certificates created by OSBS-Box
+certificates_dir: "{{ osbs_box_data_dir }}/certificates"
+koji_certs_dir: "{{ certificates_dir }}/koji"
 
 # Directories that will serve as the backing storage for persistent volumes
 koji_files_dir: "{{ osbs_box_data_dir }}/pv/koji-files"
