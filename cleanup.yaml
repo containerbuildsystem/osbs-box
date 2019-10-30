@@ -150,6 +150,7 @@
         state: absent
       loop:
         - "{{ koji_certs_dir }}"
+        - "{{ registry_certs_dir }}"
         - "{{ certificates_dir }}"
       tags:
         - certificates

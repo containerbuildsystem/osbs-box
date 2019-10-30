@@ -68,6 +68,7 @@ openshift_files: "{{ osbs_box_data_dir }}/openshift"
 # Directories for certificates created by OSBS-Box
 certificates_dir: "{{ osbs_box_data_dir }}/certificates"
 koji_certs_dir: "{{ certificates_dir }}/koji"
+registry_certs_dir: "{{ certificates_dir }}/registry"
 
 # Directories that will serve as the backing storage for persistent volumes
 koji_files_dir: "{{ osbs_box_data_dir }}/pv/koji-files"
