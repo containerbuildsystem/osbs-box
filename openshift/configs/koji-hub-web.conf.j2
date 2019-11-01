@@ -1,0 +1,37 @@
+[web]
+SiteName = koji
+# KojiTheme = mytheme
+
+# Key urls
+KojiHubURL = http://localhost/kojihub
+KojiFilesURL = https://koji-hub.{{ osbs_box_host }}/kojifiles
+
+# SSL authentication options
+WebCert = /etc/pki/koji/kojiweb.pem
+KojiHubCA = /etc/pki/koji/koji-ca.crt
+
+LoginTimeout = 72
+
+# This must be changed and uncommented before deployment
+Secret = OK_BUT_WHY_THOUGH
+
+LibPath = /usr/share/koji-web/lib
+
+# This can be a space-delimited list of the numeric IDs of users that you want
+# to hide from tasks listed on the front page. You might want to, for instance,
+# hide the activity of an account used for continuous integration.
+# HiddenUsers = 5372 1234
+
+# Task types visible in pulldown menu on tasks page.
+# Tasks =
+# runroot plugin provided via main package could be listed as:
+# Tasks = runroot
+# Tasks that can exist without a parent
+# ToplevelTasks =
+# Tasks that can have children
+# ParentTasks =
+
+# Uncommenting this will show python tracebacks in the webUI, but they are the
+# same as what you will see in apache's error_log.
+# Not for production use
+PythonDebug = True

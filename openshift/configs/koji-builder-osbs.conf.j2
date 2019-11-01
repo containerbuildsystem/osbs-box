@@ -1,0 +1,31 @@
+[general]
+build_json_dir = /usr/share/osbs/
+verbose = 1
+openshift_required_version = 3.6.0
+
+[default]
+openshift_url = {{ openshift_url }}
+namespace = {{ orchestrator_namespace }}
+build_from = image:osbs-box/buildroot
+reactor_config_map = reactor-config-map
+build_type = prod
+can_orchestrate = true
+use_auth = true
+use_kerberos = false
+verify_ssl = false
+username = {{ openshift_user }}
+password = {{ openshift_password }}
+
+[scratch]
+openshift_url = {{ openshift_url }}
+namespace = {{ orchestrator_namespace }}
+build_from = image:osbs-box/buildroot
+reactor_config_map = reactor-config-map
+build_type = prod
+can_orchestrate = true
+use_auth = true
+use_kerberos = false
+verify_ssl = false
+username = {{ openshift_user }}
+password = {{ openshift_password }}
+scratch = true

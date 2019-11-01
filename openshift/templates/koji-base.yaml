@@ -61,6 +61,7 @@ objects:
       strategy:
         type: Docker
         dockerStrategy:
+          noCache: true
           from:
             kind: DockerImage
             name: registry.fedoraproject.org/fedora:30

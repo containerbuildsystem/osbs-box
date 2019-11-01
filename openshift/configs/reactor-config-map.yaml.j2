@@ -1,0 +1,52 @@
+---
+version: 1
+
+clusters:
+  x86_64:
+    - name: worker
+      max_concurrent_builds: 4
+      enabled: true
+
+clusters_client_config_dir: /var/run/secrets/atomic-reactor/client-config-secret
+
+koji:
+  hub_url: https://koji-hub.{{ koji_namespace }}/kojihub
+  root_url: https://koji-hub.{{ koji_namespace }}/kojifiles
+  auth:
+    ssl_certs_dir: /var/run/secrets/atomic-reactor/kojisecret
+
+image_labels:
+  vendor: "Red Hat, Inc."
+  authoritative-source-url: osbs-box.example.com
+  distribution-scope: public
+
+openshift:
+  url: {{ openshift_url }}
+  build_json_dir: /usr/share/osbs/
+  auth:
+    enable: true
+
+platform_descriptors:
+  - platform: x86_64
+    architecture: amd64
+
+content_versions:
+  - v2
+
+registries:
+  - url: http://{{ registry_ip }}:5000/v2
+    insecure: true
+
+source_registry:
+  url: http://{{ registry_ip }}:5000/
+  insecure: true
+
+sources_command: rhpkg sources
+
+required_secrets:
+  - kojisecret
+
+worker_token_secrets:
+  - client-config-secret
+
+skip_koji_check_for_base_image: true

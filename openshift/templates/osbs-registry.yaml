@@ -1,0 +1,102 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: osbs-registry
+  description: >
+    Container image registry for OSBS-Box. It can be used both as the source for
+    pulling base images and as the destination for pushing built images.
+
+    It is simply the registry:2 docker image using a HostPath PV for its data.
+
+parameters:
+  - name: REGISTRY_DATA_DIR
+    description: Local directory for registry data
+    required: true
+
+  - name: OSBS_BOX_HOST
+    description: Hostname of the machine running OSBS-Box
+    value: localhost
+    required: true
+
+labels:
+  app: osbs-registry
+
+objects:
+  - kind: PersistentVolume
+    apiVersion: v1
+    metadata:
+      name: registry-data
+    spec:
+      hostPath:
+        path: ${REGISTRY_DATA_DIR}
+      accessModes:
+        - ReadWriteOnce
+      capacity:
+        storage: 100Gi
+      persistentVolumeReclaimPolicy: Retain
+
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: registry-data
+    spec:
+      volumeName: registry-data
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: osbs-registry
+    spec:
+      replicas: 1
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          name: osbs-registry
+          labels:
+            app: osbs-registry
+        spec:
+          containers:
+            - name: osbs-registry
+              image: registry:2
+              ports:
+                - containerPort: 5000
+              env:
+                - name: REGISTRY_STORAGE_DELETE_ENABLED
+                  value: "true"
+              volumeMounts:
+                - name: registry-data
+                  mountPath: /var/lib/registry
+          volumes:
+            - name: registry-data
+              persistentVolumeClaim:
+                claimName: registry-data
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: osbs-registry
+    spec:
+      selector:
+        app: osbs-registry
+      ports:
+        - name: "5000"
+          port: 5000
+          targetPort: 5000
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: osbs-registry
+    spec:
+      host: osbs-registry.${OSBS_BOX_HOST}
+      to:
+        kind: Service
+        name: osbs-registry
+      port:
+        targetPort: "5000"

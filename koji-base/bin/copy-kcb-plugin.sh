@@ -4,7 +4,7 @@ set -euo pipefail
 # After pip-installing koji-containerbuild from git, use this script to copy
 # the specified plugin (cli, hub or builder) to the correct location.
 
-KCB="/usr/local/lib/$PYTHON/site-packages/koji_containerbuild"
+KCB="/usr/lib/$PYTHON/site-packages/koji_containerbuild"
 
 plugin=${1:-''}
 

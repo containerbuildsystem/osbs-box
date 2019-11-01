@@ -1,68 +1,149 @@
-- name: Clean up everything that was created by OSBS-Box
+- name: Prepare for cleanup
   hosts: localhost
+  tags:
+    - always
 
   tasks:
-    # Delete all openshift objects (including pods and their containers)
-    - block:
-        - name: Check if openshift cluster is running
-          command: oc whoami
-          register: whoami
-          changed_when: false
-          # Do not fail if cluster is not running
-          failed_when: >
-            whoami.rc != 0 and not (
-              'The connection to the server' in whoami.stderr and
-              'was refused' in whoami.stderr
-            )
+    - name: Check if openshift cluster is running
+      command: oc whoami
+      register: whoami
+      changed_when: false
+      # Do not fail if cluster is not running
+      failed_when: >
+        whoami.rc != 0 and not (
+          'The connection to the server' in whoami.stderr and
+          'was refused' in whoami.stderr
+        )
 
-        - name: Login as openshift admin
-          command: oc login -u system:admin
-          changed_when: whoami.stdout != 'system:admin'
-          when: whoami.rc == 0  # Do not attempt if cluster is not running
+    - name: Login as openshift admin
+      command: oc login -u system:admin
+      changed_when: whoami.stdout != 'system:admin'
+      when: whoami.rc == 0  # Do not attempt if cluster is not running
 
-        - name: Delete the koji namespace (and everything in it)
-          command: oc delete namespace "{{ koji_namespace }}"
-          register: delete_namespace
-          changed_when: delete_namespace.rc == 0
-          failed_when: delete_namespace.rc != 0 and
-                       'not found' not in delete_namespace.stderr
-          when: whoami.rc == 0
 
-        - name: Delete koji PVs from openshift
-          command: oc delete pv --selector volume=koji-volume
-          register: delete_pvs
-          changed_when: delete_pvs.rc == 0 and
-                        delete_pvs.stdout != 'No resources found'
-          failed_when: delete_pvs.rc != 0
-          when: whoami.rc == 0
+- name: Delete koji
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - koji
+    # All tags related to koji PVs (deleting PVs while in use is a bad idea)
+    - pvs
+    - koji_pvs
+    - koji_db_pv
+    - koji_files_pv
+    # One tag to rule them all
+    - everything
+
+  tasks:
+    - name: Delete koji namespace from openshift
+      command: oc delete namespace "{{ koji_namespace }}"
+      register: delete_koji_namespace
+      changed_when: delete_koji_namespace.rc == 0
+      failed_when: delete_koji_namespace.rc != 0 and
+                   'not found' not in delete_koji_namespace.stderr
+      when: whoami.rc == 0
+
+    - name: Delete koji PVs from openshift
+      command: oc delete pv --selector volume=koji-volume
+      register: delete_koji_pvs
+      changed_when: delete_koji_pvs.rc == 0 and
+                    delete_koji_pvs.stdout != 'No resources found'
+      failed_when: delete_koji_pvs.rc != 0
+      when: whoami.rc == 0
+
+
+- name: Delete docker registry
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - registry
+    - pvs
+    - registry_pv
+    - everything
+
+  tasks:
+    - name: Delete registry namespace from openshift
+      command: oc delete namespace "{{ registry_namespace }}"
+      register: delete_registry_namespace
+      changed_when: delete_registry_namespace.rc == 0
+      failed_when: delete_registry_namespace.rc != 0 and
+                   'not found' not in delete_registry_namespace.stderr
+      when: whoami.rc == 0
+
+    - name: Delete registry PV from openshift
+      command: oc delete pv registry-data
+      register: delete_registry_pv
+      changed_when: delete_registry_pv.rc == 0
+      failed_when: delete_registry_pv.rc != 0 and
+                   'not found' not in delete_registry_pv.stderr
+      when: whoami.rc == 0
+
+
+- name: Delete OSBS orchestrator and worker namespaces
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - namespaces
+    - everything
+
+  tasks:
+    - name: Delete orchestrator and worker namespaces from openshift
+      command: oc delete namespace "{{ item }}"
+      register: delete_osbs_namespace
+      changed_when: delete_osbs_namespace.rc == 0
+      failed_when: delete_osbs_namespace.rc != 0 and
+                   'not found' not in delete_osbs_namespace.stderr
+      loop:
+        - "{{ orchestrator_namespace }}"
+        - "{{ worker_namespace }}"
+      when: whoami.rc == 0
+
+
+# TODO: Delete OSBS buildroot
+
+
+- name: Delete persistent volume data
+  hosts: localhost
+  gather_facts: false
+  become: true
+  tags:
+    - never
+    - pvs
+    - everything
+
+  tasks:
+    - name: Delete koji-db-data PV directory
+      file:
+        path: "{{ koji_db_data_dir }}"
+        state: absent
       tags:
-        - openshift_objects
-        # Tags related to PVs (deleting PVs while still in use is a bad idea)
         - koji_pvs
-        - koji_db_data
-        - koji_files
-        - box_data
+        - koji_db_pv
 
-    - block:
-        - name: Delete koji-db-data PV directory
-          file:
-            path: "{{ koji_db_data_dir }}"
-            state: absent
-          tags:
-            - koji_db_data
-
-        - name: Delete koji-files PV directory
-          file:
-            path: "{{ koji_files_dir }}"
-            state: absent
-          tags:
-            - koji_files
-      become: true
+    - name: Delete koji-files PV directory
+      file:
+        path: "{{ koji_files_dir }}"
+        state: absent
       tags:
-        - never
         - koji_pvs
-        - box_data
+        - koji_files_pv
 
+    - name: Delete registry-data PV directory
+      file:
+        path: "{{ registry_data_dir }}"
+        state: absent
+      tags:
+        - registry_pv
+
+
+- name: Delete all remaining OSBS-Box data
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - never
+    - everything
+
+  tasks:
     - name: Delete koji certificate directories
       file:
         path: "{{ item }}"
@@ -71,14 +152,17 @@
         - "{{ koji_certs_work }}"
         - "{{ koji_certs_final }}"
       tags:
-        - never
         - koji_certs
-        - box_data
 
-    - name: Delete all remaining OSBS-Box data
+    - name: Delete openshift files directory
+      file:
+        path: "{{ openshift_files }}"
+        state: absent
+      tags:
+        - openshift_files
+
+    - name: Delete OSBS-Box data directory
+      # At this point, it should only contain empty directories (if anything)
       file:
         path: "{{ osbs_box_data_dir }}"
         state: absent
-      tags:
-        - never
-        - box_data
