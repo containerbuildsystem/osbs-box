@@ -268,4 +268,28 @@
           - "system:build-strategy-custom"
 
 
-# TODO: Build OSBS buildroot
+- name: Build OSBS buildroot
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - buildroot
+
+  tasks:
+    - name: Copy osbs-buildroot template to openshift files dir
+      copy:
+        src: openshift/templates/osbs-buildroot.yaml
+        dest: "{{ openshift_files }}/osbs-buildroot.yaml"
+
+    - name: Create openshift resources for osbs-buildroot
+      shell:
+        set -o pipefail;
+        oc process -f "{{ openshift_files }}/osbs-buildroot.yaml"
+                   --param-file "{{ openshift_files }}/osbs-box.env"
+                   --ignore-unknown-parameters |
+        oc --namespace "{{ orchestrator_namespace }}" apply -f -
+      changed_when: true
+
+    - name: Build osbs-buildroot
+      command: oc --namespace "{{ orchestrator_namespace }}"
+                  start-build osbs-buildroot
+      changed_when: true
