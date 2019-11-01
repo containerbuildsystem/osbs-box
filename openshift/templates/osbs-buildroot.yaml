@@ -1,0 +1,88 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: osbs-buildroot
+  description: >
+    Buildroot is the image which is pulled and run by orchestrator to do
+    an image build. It should live in the orchestrator namespace.
+
+labels:
+  build: osbs-buildroot
+
+parameters:
+  - name: OSBS_BOX_REPO
+    description: Repository to build the image from
+    value: https://github.com/containerbuildsystem/osbs-box
+    required: true
+
+  - name: OSBS_BOX_VERSION
+    description: Branch/tag/commit within the repository specified above
+    value: master
+    required: true
+
+  - name: PY_VER
+    description: Version of python to use (2 or 3), default 3
+    value: "3"
+    required: false
+
+  - name: ATOMIC_REACTOR_PIP_REF
+    description: >
+      Pip URL to install atomic-reactor from (git+<repo>[@<version>])
+    value: git+https://github.com/containerbuildsystem/atomic-reactor
+    required: true
+
+  - name: OSBS_CLIENT_PIP_REF
+    description: >
+      Pip URL to install osbs-client from (git+<repo>[@<version>])
+    value: git+https://github.com/containerbuildsystem/osbs-client
+    required: true
+
+  - name: DOCKERFILE_PARSE_PIP_REF
+    description: >
+      Pip URL to install dockerfile-parse from (git+<repo>[@<version>])
+    value: git+https://github.com/containerbuildsystem/dockerfile-parse
+    required: true
+
+  - name: DOCKPULP_PIP_REF
+    description: >
+      Pip URL to install dockpulp from (git+<repo>[@<version>])
+    value: git+https://github.com/release-engineering/dockpulp
+    required: true
+
+objects:
+  - kind: ImageStream
+    apiVersion: v1
+    metadata:
+      name: osbs-buildroot
+    spec: {}
+
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: osbs-buildroot
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${OSBS_BOX_REPO}
+          ref: ${OSBS_BOX_VERSION}
+        contextDir: osbs-buildroot
+      strategy:
+        type: Docker
+        dockerStrategy:
+          noCache: true
+          buildArgs:
+            - name: PY_VER
+              value: ${PY_VER}
+            - name: ATOMIC_REACTOR_PIP_REF
+              value: ${ATOMIC_REACTOR_PIP_REF}
+            - name: OSBS_CLIENT_PIP_REF
+              value: ${OSBS_CLIENT_PIP_REF}
+            - name: DOCKERFILE_PARSE_PIP_REF
+              value: ${DOCKERFILE_PARSE_PIP_REF}
+            - name: DOCKPULP_PIP_REF
+              value: ${DOCKPULP_PIP_REF}
+      output:
+        to:
+          kind: ImageStreamTag
+          name: osbs-buildroot:latest
