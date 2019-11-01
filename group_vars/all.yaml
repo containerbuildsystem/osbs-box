@@ -2,7 +2,7 @@
 ### General settings
 
 # OSBS-Box repository and version (branch, tag or commit ID)
-# Used by openshift when building koji images
+# Used by openshift when building images
 osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
 osbs_box_version: a-new-box
 
@@ -43,6 +43,8 @@ registry_namespace: osbs-registry
 
 
 ### Repositories and versions for OSBS components
+
+buildroot_python_version: 3
 
 atomic_reactor_repo: https://github.com/containerbuildsystem/atomic-reactor
 atomic_reactor_version: master
