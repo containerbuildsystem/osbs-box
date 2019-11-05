@@ -2,10 +2,30 @@
 
 An OpenShift based project that provides a local environment for testing OSBS components.
 
-Currently, this environment is not yet complete (except for the Koji part).
+
+## Basic usage
+
+Run a simple container build on your OSBS-Box:
+
+```bash
+$ # Get URL of container registry
+$ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
+
+$ # Copy base image for container build to registry
+$ # You might want to use skopeo-lite instead, more on that below
+$ skopeo copy docker://registry.fedoraproject.org/fedora:30 \
+              docker://${OSBS_REGISTRY}/fedora:30 \
+              --dest-tls-verify=false
+
+$ # Run koji container-build
+$ oc -n osbs-koji rsh dc/koji-client \
+      koji container-build candidate \
+          git://github.com/chmeliik/docker-hello-world#origin/osbs-box-basic \
+          --git-branch osbs-box-basic
+```
 
 
-## How-to
+## Deployment
 
 OSBS-Box is primarily intended for use with OpenShift clusters created using `oc cluster up`.
 
@@ -22,11 +42,11 @@ For more details, refer to
 
 ### Prerequisites
 
-* ansible
+* Ansible
 * an OpenShift cluster, as described above
 
 
-### Deploying OSBS-Box
+### Deployment steps
 
 1. If you haven't already, `git clone` this repository
 2. Take a look at the [configuration file](group_vars/all.yaml)
@@ -44,20 +64,21 @@ __NOTE__: The __deploy.yaml__ playbook only starts the build, it does not wait f
 deployment to finish. You can check the deployment status in the web console or with `oc status`.
 
 
-### Using OSBS-Box
+## Using OSBS-Box
 
 During deployment, the OpenShift user specified in [group\_vars/all.yaml](group_vars/all.yaml) will
 be given cluster admin privileges. This is the user you are going to want to log in as from the
 web console / CLI.
 
-#### OpenShift console
+### OpenShift console
 
 Located at https://localhost:8443/console/ by default.
 
-After navigating to the koji project, you will see all the koji pods, you can view their logs,
-open terminals in them etc.
+You will see all the OSBS-Box namespaces here (by default, they are called `osbs-*`). After
+entering a namespace, you will see all the running pods, you can view their logs, open terminals
+in them etc.
 
-#### OpenShift CLI
+### OpenShift CLI
 
 Generally, anything you can do in the console, you can do with `oc`.  Just make sure you are in
 the right project.
@@ -66,12 +87,12 @@ To run a command in a container from the command line (for example, `koji hello`
 
 ```bash
 $ oc rsh dc/koji-client koji hello  # dc is short for deploymentconfig
-$ oc -n koji rsh dc/koji-client koji hello  # From a project other than koji
+$ oc -n osbs-koji rsh dc/koji-client koji hello  # From a project other than osbs-koji
 ```
 
 Use `oc rsh <pod name>` or `oc rsh <pod name> bash` to open a remote shell in the specified pod.
 
-#### Koji website
+### Koji website
 
 The koji-hub OpenShift app provides an external route where you can access the koji website.
 You can find the URL in the console or with `oc get route koji-hub`. Here, you can view
@@ -83,12 +104,65 @@ the koji certificates directory (__~/.local/share/osbs-box/certificates/koji/__ 
 There is one for each koji user (by default, only _kojiadmin_ and _kojiosbs_ are users, but
 logging in creates a user automatically).
 
-#### Koji CLI (local)
+### Koji CLI (local)
 
 Coming soon<sup>TM</sup>
 
+### Container registry
 
-### Updating OSBS-Box
+OSBS-Box deploys a container registry for you. It is used both as the source registry for base
+images and the output registry for built images.
+
+You can access it just like any other container registry using its external route. You can find the
+URL in the console or with `oc get route osbs-registry`.
+
+Since the certificate used for the registry is signed by our own, untrusted CA, the registry is
+considered insecure. To access the registry with various tools you need to:
+
+* `docker`: Add the registry URL to `insecure-registries` in __/etc/docker/daemon.json__
+            and restart docker
+* `podman`: Use the `--tls-verify=false` option
+* `skopeo`: Use the `--tls-verify=false` option (or `--(src|dest)-tls-verify=false` for copying)
+
+### Skopeo-lite
+
+Regular `skopeo` does not copy manifest lists. Builds may work even with base images copied using
+`skopeo`, but they will not use OSBS features related to manifest lists.
+
+For this purpose, OSBS-Box provides a `skopeo-lite` image.
+
+Use it with `podman`:
+
+```bash
+$ podman build skopeo-lite/ --tag skopeo-lite
+
+$ # Get URL of container registry
+$ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
+
+$ # Copy image to container registry
+$ podman run --rm -ti \
+      skopeo-lite copy docker://registry.fedoraproject.org/fedora:30 \
+                       docker://${OSBS_REGISTRY}/fedora:30 \
+                       --dest-tls-verify=false
+```
+
+Or `docker`:
+
+```bash
+$ docker build skopeo-lite/ --tag skopeo-lite
+
+$ # Get IP of container registry, your firewall will likely prevent docker from accessing the URL
+$ REGISTRY_IP=$(oc -n osbs-registry get svc osbs-registry --output jsonpath='{ .spec.clusterIP }')
+
+$ # Copy image to container registry
+$ docker run --rm -ti \
+      skopeo-lite copy docker://registry.fedoraproject.org/fedora:30 \
+                       docker://${REGISTRY_IP}:5000/fedora:30 \
+                       --dest-tls-verify=false
+```
+
+
+## Updating OSBS-Box
 
 In general, there are two reasons why you might want to update your OSBS-Box instance:
 
@@ -101,7 +175,7 @@ In both cases, what you want to do is:
     * e.g. __repo__, __branch__ for the OSBS components you want to test
 2. Run the __deploy.yaml__ playbook with your overrides
     * __NOTE__: you do not need to run the __generate-certs.yaml__ playbook unless they are
-      expired, but if you do run it, you will need to reimport them into your browser
+      expired, but if you do run it, you may need to reimport them into your browser
 
 __NOTE__: When working on OSBS-Box code, to test changes concerning any of the pieces used to
 build Docker images, you will need to __push the changes first__ before running the playbook,
@@ -109,11 +183,11 @@ because OpenShift gets the code for builds from git. Alternatively, instead of u
 you can just `oc start-build <the component you changed> --from-dir .`.
 
 
-### Cleaning up
+## Cleaning up
 
 There are multiple reasons why you might want to clean up OSBS-Box data:
 
-* You've done some koji setup, but now you need to undo it
+* You need to reset your koji/registry instances to a clean state
 * For some reason, updating your OSBS-Box failed (and it is not because of the code)
 * You are done with OSBS-Box (forever)
 
@@ -124,7 +198,7 @@ there are extra tags (not run by default) related to local data:
 * `openshift_files`: OpenShift files (templates, configs) created during deployment
 * `certificates`: certificates created by __generate_certs.yaml__
 * `pvs`: _all of the below, uses `sudo` (run playbook with `--ask-become-pass`)_
-    * `registry_pv`: PV for the docker registry container
+    * `registry_pv`: PV for the container registry
     * `koji_pvs`: _all of the below_
         * `koji_db_pv`: koji database PV
         * `koji_files_pv`: PV used by koji-hub and koji-builder for __/mnt/koji/__
@@ -172,3 +246,17 @@ __Reproduce__:
 5. Congratulations, koji now thinks a non-existent user is logged in
 
 __Solution__: clear cookies, reload website
+
+
+### Running deployment playbook triggers multiple deployments in OpenShift
+
+__Problem__:
+
+For some reason, even though the DeploymentConfigs are configured to only trigger deployments
+on imageChange, running the deployment playbook against a running OSBS-Box instance triggers
+multiple re-deployments of koji components.
+
+__Solution__:
+
+This is not a major issue, just do not be surprised when you see your koji containers getting
+restarted 2 or 3 times after each deployment (except for the initial deployment, that works fine).
