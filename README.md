@@ -12,9 +12,9 @@ $ # Get URL of container registry
 $ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
 
 $ # Copy base image for container build to registry
-$ # You might want to use skopeo-lite instead, more on that below
 $ skopeo copy docker://registry.fedoraproject.org/fedora:30 \
               docker://${OSBS_REGISTRY}/fedora:30 \
+              --all \
               --dest-tls-verify=false
 
 $ # Run koji container-build
@@ -23,6 +23,9 @@ $ oc -n osbs-koji rsh dc/koji-client \
           git://github.com/chmeliik/docker-hello-world#origin/osbs-box-basic \
           --git-branch osbs-box-basic
 ```
+
+If your version of `skopeo` does not support the `--all` flag, you might want to use `skopeo-lite`
+instead. More on that [here](#Skopeo-lite).
 
 
 ## Deployment
@@ -126,8 +129,11 @@ considered insecure. To access the registry with various tools you need to:
 
 ### Skopeo-lite
 
-Regular `skopeo` does not copy manifest lists. Builds may work even with base images copied using
-`skopeo`, but they will not use OSBS features related to manifest lists.
+__Starting with `skopeo` release `v0.1.40`, the `copy` command comes with an `--all` flag, which
+makes skopeo also copy manifest lists. That renders `skopeo-lite` obsolete.__
+
+Prior to `v0.1.40`, `skopeo` would not copy manifest lists. Builds may work even with base images
+missing manifest lists, but they will not use the related OSBS features.
 
 For this purpose, OSBS-Box provides a `skopeo-lite` image.
 
