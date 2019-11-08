@@ -4,7 +4,7 @@
 # OSBS-Box repository and version (branch, tag or commit ID)
 # Used by openshift when building images
 osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
-osbs_box_version: a-new-box
+osbs_box_version: master
 
 # Allow ansible to install packages?
 # If true, you may need to run the generate-certs playbook with
