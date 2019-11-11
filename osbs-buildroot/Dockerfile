@@ -40,4 +40,11 @@ RUN pip${PY_VER} install "$ATOMIC_REACTOR_PIP_REF" \
                          "$DOCKERFILE_PARSE_PIP_REF" \
                          "$DOCKPULP_PIP_REF"
 
+# Installing atomic-reactor with pip installs both docker and docker-py from
+# PyPI (RHEL7 reasons). These packages overwrite each other's files, leaving
+# you with an unusable docker module. Workaround below.
+RUN pip${PY_VER} install "docker" --prefix="/usr/local" --ignore-installed
+ENV PYTHONPATH="/usr/local/lib/python2.7/site-packages/:${PYTHONPATH}"
+#               ^ python3 searches this path by default
+
 CMD ["atomic-reactor", "--verbose", "inside-build"]
