@@ -1,0 +1,19 @@
+name: Lint ansible playbooks
+
+on: [pull_request]
+
+jobs:
+  ansible-lint:
+    runs-on: ubuntu-latest
+
+    container:
+      image: fedora:30
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install ansible-lint
+      run: pip3 install ansible-lint
+
+    - name: Lint playbooks
+      run: ansible-lint generate-certs.yaml deploy.yaml cleanup.yaml
