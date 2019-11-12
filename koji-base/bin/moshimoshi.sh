@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
 
 # Call koji hello in a loop until it succeeds.
@@ -8,7 +8,7 @@ set -euo pipefail
 attempts=0
 
 while true; do
-    let attempts+=1
+    (( attempts+=1 ))
     echo "koji hello attempt #$attempts"
 
     if timeout 2 koji hello; then
