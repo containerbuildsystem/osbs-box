@@ -1,0 +1,16 @@
+name: Lint Dockerfiles
+
+on: [pull_request]
+
+jobs:
+  dockerfile-lint:
+    runs-on: ubuntu-latest
+
+    container:
+      image: hadolint/hadolint:latest-debian
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Lint Dockerfiles with hadolint
+      run: hadolint **/Dockerfile
