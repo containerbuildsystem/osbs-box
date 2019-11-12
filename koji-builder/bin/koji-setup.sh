@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
 
 # All of the koji setup necessary for running basic container builds.
@@ -8,7 +8,7 @@ check_result() {
     shift
 
     set +e
-    output=`"$@" 2>&1`
+    output=$("$@" 2>&1)
     rv=$?
     set -e
 

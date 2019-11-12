@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
 
 # After pip-installing koji-containerbuild from git, use this script to copy
