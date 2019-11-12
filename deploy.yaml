@@ -260,6 +260,7 @@
     - name: Add necessary roles to builder serviceaccounts
       command: oc --namespace "{{ item.0 }}" adm policy
                   add-role-to-user "{{ item.1 }}" -z builder
+      changed_when: true
       loop:
         "{{ namespaces | product(roles) | list }}"
       vars:
