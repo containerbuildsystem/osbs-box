@@ -4,8 +4,7 @@
     - always
 
   tasks:
-    - name: Check if we are logged in as openshift admin
-      command: oc whoami
+    - command: oc whoami
       register: whoami
       changed_when: false
 
