@@ -82,9 +82,7 @@ class BuildStealer(object):
                 checksum.update(chunk)
 
         if expected_checksum and checksum.hexdigest() != expected_checksum:
-            raise ValueError(
-                'Computed md5 checksum, {}, does not match expected checksum, {}'
-                .format(checksum.hexdigest(), expected_checksum))
+            raise ValueError('Computed md5 checksum, {}, does not match expected checksum, {}'.format(checksum.hexdigest(), expected_checksum))
 
 
 def parse_args():
