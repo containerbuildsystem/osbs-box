@@ -8,7 +8,7 @@ set -euo pipefail
 attempts=0
 
 while true; do
-    (( attempts+=1 ))
+    let attempts+=1
     echo "koji hello attempt #$attempts"
 
     if timeout 2 koji hello; then
