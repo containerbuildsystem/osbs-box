@@ -17,16 +17,23 @@
 #
 #   force: Generate the certificate even if it passes the check (default False)
 ---
-- name: Check if "{{ cert.name }}" certificate exists and is valid
-  openssl_certificate:
-    provider: assertonly
-    path: "{{ dir }}/{{ cert.name }}.crt"
-    has_expired: false
-    subject:
-      CN: "{{ cert.common_name | default(cert.name) }}"
-    subject_alt_name: "{{ cert.subject_alt_name | default(omit) }}"
-  ignore_errors: true
-  register: check_cert
+- block:
+    - name: Get certificate info for "{{ cert.name }}"
+      openssl_certificate_info:
+        path: "{{ dir }}/{{ cert.name }}.crt"
+      ignore_errors: true
+      register: info
+
+    - name: Check if "{{ cert.name }}" certificate is valid
+      assert:
+        that:
+          - not info.failed
+          - not info.expired
+          - info.subject.commonName == (cert.common_name | default(cert.name))
+          - cert.subject_alt_name is undefined
+            or (info.subject_alt_name | sort) == (cert.subject_alt_name | sort)
+      ignore_errors: true
+      register: check
   when: not (force | default(False))
 
 - block:
@@ -52,4 +59,4 @@
         # Generate the certificate even if it already exists,
         # otherwise an expired certificate would not be overwritten
         force: true
-  when: (force | default(False)) or check_cert.failed
+  when: (force | default(False)) or check.failed

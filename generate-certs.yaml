@@ -19,13 +19,20 @@
         - "{{ registry_certs_dir }}"
 
   tasks:
-    - name: Check if CA certificate exists and has not expired
-      openssl_certificate:
-        provider: assertonly
-        path: "{{ certificates_dir }}/osbs-box-ca.crt"
-        has_expired: false
-      ignore_errors: true
-      register: check_ca
+    - block:
+        - name: Get CA certificate info
+          openssl_certificate_info:
+            path: "{{ certificates_dir }}/osbs-box-ca.crt"
+          ignore_errors: true
+          register: ca_info
+
+        - name: Check if CA certificate is valid
+          assert:
+            that:
+              - not ca_info.failed
+              - not ca_info.expired
+          ignore_errors: true
+          register: ca_check
 
     - block:
         - name: Generate CA private key
@@ -50,7 +57,7 @@
             # Generate the certificate even if it already exists,
             # otherwise an expired certificate would not be overwritten
             force: true
-      when: check_ca.failed
+      when: ca_check.failed
 
     - name: Generate certificates for all koji components
       include_tasks: tasks/generate-ownca-cert.yaml
