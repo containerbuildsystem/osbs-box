@@ -1,7 +1,36 @@
-- name: Prepare for deployment
+- name: Generate certificates for OSBS-Box
   hosts: localhost
   tags:
-    - always
+    - certificates
+
+  tasks:
+    - name: Make sure python-pyOpenSSL package is installed
+      package:
+        name: "python{{ ansible_python.version.major }}-pyOpenSSL"
+        state: present
+      when: allow_pkg_install
+      become: true
+
+    - name: Make sure certificate directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ certificates_dir }}"
+        - "{{ koji_certs_dir }}"
+        - "{{ registry_certs_dir }}"
+
+    - name: Generate certificates
+      include_tasks: tasks/generate-certs.yaml
+
+
+- name: Prepare for deployment of openshift applications
+  hosts: localhost
+  tags:
+    - koji
+    - registry
+    - namespaces
+    - buildroot
 
   tasks:
     - name: Check if we are logged in as openshift admin
