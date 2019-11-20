@@ -2,9 +2,9 @@
   hosts: localhost
 
   pre_tasks:
-    - name: Make sure python-cryptography package is installed
+    - name: Make sure python-pyOpenSSL package is installed
       package:
-        name: "python{{ ansible_python.version.major }}-cryptography"
+        name: "python{{ ansible_python.version.major }}-pyOpenSSL"
         state: present
       when: allow_pkg_install
       become: true
