@@ -16,4 +16,4 @@ jobs:
       run: pip3 install ansible-lint
 
     - name: Lint playbooks
-      run: ansible-lint deploy.yaml cleanup.yaml
+      run: ansible-lint deploy.yaml cleanup.yaml --force-color
