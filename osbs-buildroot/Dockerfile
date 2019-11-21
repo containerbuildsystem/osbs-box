@@ -17,7 +17,8 @@ COPY --from=build "/go/bin/imagebuilder" "/usr/bin/imagebuilder"
 RUN dnf -y install "fedpkg-minimal" \
                    "python${PY_VER}-rpm" \
                    "python${PY_VER}-koji" \
-                   "python${PY_VER}-libmodulemd"
+                   "python${PY_VER}-libmodulemd" \
+                   "skopeo"
 
 # Install stuff that will be needed for pip-installing OSBS components from git
 RUN dnf -y install "git-core" \
