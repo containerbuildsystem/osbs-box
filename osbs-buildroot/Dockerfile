@@ -15,6 +15,9 @@ RUN if [ "$PY_VER" != 3 ]; then \
 # Install non-OSBS buildroot components
 COPY --from=build "/go/bin/imagebuilder" "/usr/bin/imagebuilder"
 RUN dnf -y install "fedpkg-minimal" \
+                   "file" \
+                   "findutils" \
+                   "jq" \
                    "python${PY_VER}-rpm" \
                    "python${PY_VER}-koji" \
                    "python${PY_VER}-libmodulemd" \
@@ -47,5 +50,10 @@ RUN pip${PY_VER} install "$ATOMIC_REACTOR_PIP_REF" \
 RUN pip${PY_VER} install "docker" --prefix="/usr/local" --ignore-installed
 ENV PYTHONPATH="/usr/local/lib/python2.7/site-packages/:${PYTHONPATH}"
 #               ^ python3 searches this path by default
+
+# Add script for building source container images
+RUN curl "https://raw.githubusercontent.com/containers/BuildSourceImage/master/BuildSourceImage.sh" \
+          -o /usr/bin/bsi
+RUN chmod +x /usr/bin/bsi
 
 CMD ["atomic-reactor", "--verbose", "inside-build"]
