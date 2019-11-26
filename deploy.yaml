@@ -1,5 +1,5 @@
 - name: Generate certificates for OSBS-Box
-  hosts: localhost
+  hosts: osbs_box_host
   tags:
     - certificates
 
@@ -18,7 +18,7 @@
 
 
 - name: Prepare for deployment of openshift applications
-  hosts: localhost
+  hosts: osbs_box_host
   tags:
     - koji
     - registry
@@ -49,7 +49,7 @@
 
 
 - name: Run koji containers on openshift
-  hosts: localhost
+  hosts: osbs_box_host
   gather_facts: false
   vars:
     # This is a constant, please do not override
@@ -153,7 +153,7 @@
 
 
 - name: Run registry container on openshift
-  hosts: localhost
+  hosts: osbs_box_host
   gather_facts: false
   tags:
     - registry
@@ -206,7 +206,7 @@
 
 
 - name: Set up OSBS orchestrator and worker namespaces
-  hosts: localhost
+  hosts: osbs_box_host
   gather_facts: false
   vars:
     # This is a constant, please do not override
@@ -292,7 +292,7 @@
 
 
 - name: Build OSBS buildroot
-  hosts: localhost
+  hosts: osbs_box_host
   gather_facts: false
   tags:
     - buildroot
