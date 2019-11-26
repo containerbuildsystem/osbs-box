@@ -55,6 +55,7 @@ For more details, refer to
 1. If you haven't already, `git clone` this repository
 2. Take a look at the [configuration file](group_vars/all.yaml)
 3. Run `ansible-playbook deploy.yaml`
+    * If you are sure that you do not need to re-generate certificates, use `--tags=openshift`
 
 __NOTE__: Rather than changing the configuration in __group_vars/all.yaml__, you might want to
 create a file containing your overrides (e.g. __overrides.yaml__) and run the playbooks like this:

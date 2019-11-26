@@ -24,6 +24,8 @@
     - registry
     - namespaces
     - buildroot
+    # One tag for all openshift applications
+    - openshift
 
   tasks:
     - name: Login as openshift admin
@@ -60,6 +62,7 @@
       - koji-hub
   tags:
     - koji
+    - openshift
 
   tasks:
     - name: Create koji namespace in openshift
@@ -154,6 +157,7 @@
   gather_facts: false
   tags:
     - registry
+    - openshift
 
   tasks:
     - name: Create registry namespace in openshift
@@ -211,6 +215,7 @@
       - "{{ worker_namespace }}"
   tags:
     - namespaces
+    - openshift
 
   tasks:
     - name: Create orchestrator and worker namespaces in openshift
@@ -291,6 +296,7 @@
   gather_facts: false
   tags:
     - buildroot
+    - openshift
 
   tasks:
     - name: Copy osbs-buildroot template to openshift files dir
