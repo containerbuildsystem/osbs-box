@@ -43,6 +43,9 @@ check_result 'Package osbs-buildroot-docker already exists in tag dest' \
 check_result 'Package docker-hello-world already exists in tag dest' \
              koji add-pkg dest docker-hello-world --owner kojiadmin
 
+check_result 'Package docker-hello-world-source already exists in tag dest' \
+             koji add-pkg dest docker-hello-world-source --owner kojiadmin
+
 check_result 'btype already exists' \
              koji call addBType operator-manifests
 
