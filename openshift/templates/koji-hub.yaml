@@ -6,9 +6,8 @@ metadata:
     Koji-hub serves as the interface between clients and the database. It serves
     the koji webpage and handles requests made from the CLI.
 
-    Exposes ports 80 and 443 internally (for koji-client and koji-builder). Port
-    80 is also exposed externally, using a generated hostname. Here, users can
-    access the koji website (at http://<generated-hostname>/koji).
+    Exposes ports 80 and 443 internally. Port 443 is also exposed externally,
+    using a Route. Users can access the koji website there.
 
 parameters:
   - name: OSBS_BOX_REPO
