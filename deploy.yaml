@@ -4,13 +4,6 @@
     - certificates
 
   tasks:
-    - name: Make sure python-pyOpenSSL package is installed
-      package:
-        name: "python{{ ansible_python.version.major }}-pyOpenSSL"
-        state: present
-      when: allow_pkg_install
-      become: true
-
     - name: Make sure certificate directories exist
       file:
         path: "{{ item }}"
