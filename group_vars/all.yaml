@@ -6,13 +6,6 @@
 osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
 osbs_box_version: master
 
-# Allow ansible to install packages?
-# If true, you may need to run the generate-certs playbook with
-# --ask-become-pass (-K) and provide your sudo password.
-# Otherwise, you will need to make sure python-cryptograhy is installed before
-# running said playbook.
-allow_pkg_install: false
-
 # Directory for keeping miscellanous osbs-box data
 osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
 

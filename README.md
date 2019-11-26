@@ -46,6 +46,7 @@ For more details, refer to
 ### Prerequisites
 
 * Ansible
+* pyOpenSSL >= 0.15 (for the `openssl_*` ansible modules)
 * an OpenShift cluster, as described above
 
 
