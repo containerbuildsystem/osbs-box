@@ -26,14 +26,9 @@
     - buildroot
 
   tasks:
-    - name: Check if we are logged in as openshift admin
-      command: oc whoami
-      register: whoami
-      changed_when: false
-
     - name: Login as openshift admin
       command: oc login -u system:admin
-      changed_when: whoami.stdout != 'system:admin'
+      changed_when: true
 
     - name: Make "{{ openshift_user }}" an openshift cluster admin
       command: oc adm policy add-cluster-role-to-user

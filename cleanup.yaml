@@ -4,21 +4,13 @@
     - always
 
   tasks:
-    - name: Check if openshift cluster is running
-      command: oc whoami
-      register: whoami
-      changed_when: false
-      # Do not fail if cluster is not running
-      failed_when: >
-        whoami.rc != 0 and not (
-          'The connection to the server' in whoami.stderr and
-          'was refused' in whoami.stderr
-        )
-
-    - name: Login as openshift admin
+    - name: Try to log in as openshift admin
       command: oc login -u system:admin
-      changed_when: whoami.stdout != 'system:admin'
-      when: whoami.rc == 0  # Do not attempt if cluster is not running
+      register: oc_login
+      changed_when: oc_login.rc == 0
+      # If login failed, cluster is probably down - that means steps which use
+      # `oc` must be skipped, but otherwise, cleanup can proceed as usual
+      ignore_errors: true
 
 
 - name: Delete koji
@@ -41,7 +33,7 @@
       changed_when: delete_koji_namespace.rc == 0
       failed_when: delete_koji_namespace.rc != 0 and
                    'not found' not in delete_koji_namespace.stderr
-      when: whoami.rc == 0
+      when: not oc_login.failed
 
     - name: Delete koji PVs from openshift
       command: oc delete pv --selector volume=koji-volume
@@ -49,7 +41,7 @@
       changed_when: delete_koji_pvs.rc == 0 and
                     delete_koji_pvs.stdout != 'No resources found'
       failed_when: delete_koji_pvs.rc != 0
-      when: whoami.rc == 0
+      when: not oc_login.failed
 
 
 - name: Delete docker registry
@@ -68,7 +60,7 @@
       changed_when: delete_registry_namespace.rc == 0
       failed_when: delete_registry_namespace.rc != 0 and
                    'not found' not in delete_registry_namespace.stderr
-      when: whoami.rc == 0
+      when: not oc_login.failed
 
     - name: Delete registry PV from openshift
       command: oc delete pv registry-data
@@ -76,7 +68,7 @@
       changed_when: delete_registry_pv.rc == 0
       failed_when: delete_registry_pv.rc != 0 and
                    'not found' not in delete_registry_pv.stderr
-      when: whoami.rc == 0
+      when: not oc_login.failed
 
 
 - name: Delete OSBS orchestrator and worker namespaces
@@ -96,7 +88,7 @@
       loop:
         - "{{ orchestrator_namespace }}"
         - "{{ worker_namespace }}"
-      when: whoami.rc == 0
+      when: not oc_login.failed
 
 
 - name: Delete persistent volume data
@@ -133,7 +125,7 @@
         - registry_pv
 
 
-- name: Delete all remaining OSBS-Box data
+- name: Delete remaining OSBS-Box data
   hosts: localhost
   gather_facts: false
   tags:
