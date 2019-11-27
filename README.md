@@ -218,7 +218,7 @@ You may also want to:
 * Run `oc cluster down` and remove the data left behind by `oc cluster up`
     * Volumes that were mounted by OpenShift and never unmounted
       ```bash
-      $ mount | grep openshift | while read mountpoint; do sudo umount $mountpoint; done
+      $ findmnt -r -n -o TARGET | grep "openshift.local.clusterup" | xargs -r umount
       ```
     * The __openshift.local.clusterup/__ directory created when you ran `oc cluster up`
       (or whatever you passed as the `--base-dir` param to `oc cluster up`)
