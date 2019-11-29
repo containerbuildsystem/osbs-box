@@ -188,14 +188,21 @@ $ docker run --rm -ti \
 
 In general, there are two reasons why you might want to update your OSBS-Box instance:
 
-* Changes in OSBS-Box itself
-* Changes in other OSBS components
+1. Changes in OSBS-Box itself
+2. Changes in other OSBS components
 
-In both cases, what you want to do is:
+For case 1, your best bet is to rerun the entire deployment:
+```bash
+$ ansible-playbook deploy.yaml -i <inventory> -e <overrides>
+```
 
-1. Specify your overrides in a file
-    * e.g. __repo__, __branch__ for the OSBS components you want to test
-2. Run the __deploy.yaml__ playbook with your overrides
+For case 2, usually you will only need:
+```bash
+$ ansible-playbook deploy.yaml -i <inventory> -e <overrides> --tags=koji,buildroot
+```
+In fact, it might be desirable to run the update like this to avoid having any potential manual
+changes to the reactor config map overwritten. But if you are not sure, running the full playbook
+or at least `--tags=openshift` will work.
 
 __NOTE__: When working on OSBS-Box code, to test changes concerning any of the pieces used to
 build Docker images, you will need to __push the changes first__ before running the playbook,
