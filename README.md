@@ -1,6 +1,8 @@
 # OSBS-Box
 
-An OpenShift based project that provides a local environment for testing OSBS components.
+An OpenShift based project that provides an environment for testing OSBS components.
+Can be deployed locally using the [example inventory](inventory-example.ini), or remotely using
+your own inventory.
 
 
 ## Basic usage
@@ -8,6 +10,9 @@ An OpenShift based project that provides a local environment for testing OSBS co
 Run a simple container build on your OSBS-Box:
 
 ```bash
+$ # If running remotely, first log in to the OpenShift server or ssh into the remote machine
+$ oc login --server https://<IP address>:8443 -u osbs -p osbs
+
 $ # Get URL of container registry
 $ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
 
@@ -23,6 +28,8 @@ $ oc -n osbs-koji rsh dc/koji-client \
           git://github.com/chmeliik/docker-hello-world#origin/osbs-box-basic \
           --git-branch osbs-box-basic
 ```
+
+When logging into the server, you will likely need to use the `--insecure-skip-tls-verify` flag.
 
 If your version of `skopeo` does not support the `--all` flag, you might want to use `skopeo-lite`
 instead. More on that [here](#Skopeo-lite).
@@ -45,7 +52,10 @@ For more details, refer to
 
 ### Prerequisites
 
+__On your machine__
 * Ansible
+
+__On the target machine__
 * pyOpenSSL >= 0.15 (for the `openssl_*` ansible modules)
 * an OpenShift cluster, as described above
 
@@ -54,14 +64,15 @@ For more details, refer to
 
 1. If you haven't already, `git clone` this repository
 2. Take a look at the [configuration file](group_vars/all.yaml)
-3. Run `ansible-playbook deploy.yaml`
+3. Provide an inventory file, or use the example one
+4. Run `ansible-playbook deploy.yaml -i <inventory file>`
     * If you are sure that you do not need to re-generate certificates, use `--tags=openshift`
 
 __NOTE__: Rather than changing the configuration in __group_vars/all.yaml__, you might want to
 create a file containing your overrides (e.g. __overrides.yaml__) and run the playbooks like this:
 
 ```bash
-$ ansible-playbook <playbook> -e '@overrides.yaml'
+$ ansible-playbook <playbook> -i <inventory> -e '@overrides.yaml'
 ```
 
 __NOTE__: The __deploy.yaml__ playbook only starts the build, it does not wait for the entire
@@ -76,7 +87,7 @@ web console / CLI.
 
 ### OpenShift console
 
-Located at https://localhost:8443/console/ by default.
+Located at https://localhost:8443/console/ by default (if running locally).
 
 You will see all the OSBS-Box namespaces here (by default, they are called `osbs-*`). After
 entering a namespace, you will see all the running pods, you can view their logs, open terminals
@@ -84,12 +95,13 @@ in them etc.
 
 ### OpenShift CLI
 
-Generally, anything you can do in the console, you can do with `oc`.  Just make sure you are in
-the right project.
+Generally, anything you can do in the console, you can do with `oc`. Just make sure you are logged
+into the server and in the right project.
 
 To run a command in a container from the command line (for example, `koji hello` on the client):
 
 ```bash
+$ oc login --server <server> -u osbs -p osbs  # If not yet logged in
 $ oc rsh dc/koji-client koji hello  # dc is short for deploymentconfig
 $ oc -n osbs-koji rsh dc/koji-client koji hello  # From a project other than osbs-koji
 ```
@@ -104,9 +116,9 @@ information about your Koji instance.
 
 To log in to the website, you will first need to import a client certificate into your browser.
 These certificates are generated during deployment and can be found in the koji certificates
-directory (__~/.local/share/osbs-box/certificates/koji/__ by default).  There is one for each
-koji user (by default, only _kojiadmin_ and _kojiosbs_ are users, but logging in creates a user
-automatically).
+directory on the target machine (__~/.local/share/osbs-box/certificates/koji/__ by default).
+There is one for each koji user (by default, only _kojiadmin_ and _kojiosbs_ are users, but
+logging in creates a user automatically).
 
 ### Koji CLI (local)
 
@@ -158,13 +170,16 @@ Or `docker`:
 ```bash
 $ docker build skopeo-lite/ --tag skopeo-lite
 
-$ # Get IP of container registry, your firewall will likely prevent docker from accessing the URL
-$ REGISTRY_IP=$(oc -n osbs-registry get svc osbs-registry --output jsonpath='{ .spec.clusterIP }')
+$ # If you are on the target machine, you might need to use the registry IP instead
+$ OSBS_REGISTRY=$(oc -n osbs-registry get svc osbs-registry --output jsonpath='{ .spec.clusterIP }')
+
+$ # Otherwise, use the URL
+$ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
 
 $ # Copy image to container registry
 $ docker run --rm -ti \
       skopeo-lite copy docker://registry.fedoraproject.org/fedora:30 \
-                       docker://${REGISTRY_IP}:5000/fedora:30 \
+                       docker://${OSBS_REGISTRY}:5000/fedora:30 \
                        --dest-tls-verify=false
 ```
 
