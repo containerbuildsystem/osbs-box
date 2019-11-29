@@ -47,7 +47,7 @@ $ oc cluster up
 ```
 
 For more details, refer to
-[the OKD documentation](https://docs.okd.io/latest/getting_started/administrators.html#running-in-a-docker-container).
+[this document](https://github.com/openshift/origin/blob/release-3.11/docs/cluster_up_down.md).
 
 
 ### Prerequisites
