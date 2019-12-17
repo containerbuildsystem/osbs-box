@@ -53,7 +53,7 @@ For more details, refer to
 ### Prerequisites
 
 __On your machine__
-* Ansible
+* ansible >= 2.8
 
 __On the target machine__
 * pyOpenSSL >= 0.15 (for the `openssl_*` ansible modules)
