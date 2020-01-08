@@ -49,6 +49,9 @@ check_result 'Package docker-hello-world-source already exists in tag dest' \
 check_result 'btype already exists' \
              koji call addBType operator-manifests
 
+check_result 'btype already exists' \
+             koji call addBType remote-sources
+
 check_result "user already exists: kojiosbs" \
              koji add-user kojiosbs
 
