@@ -1,0 +1,76 @@
+# Specification of resources necessary to replicate a build in OSBS-Box
+#
+# Can contain specifications for more than one build (using the '---' separator)
+#
+# See examples below for required format
+
+---
+# Defaults
+
+# Package name to be added to dest tag
+package_name: <required>
+# TODO: Would more than one package ever be needed?
+
+# Koji build target, build and dest tags
+build_target: candidate
+build_tag: build
+dest_tag: dest
+
+# List of images to be copied to osbs-box registry
+#
+# base_images:
+#   - from: <pullspec>
+#     as: <image name>
+#
+# Will be copied using skopeo:
+#   skopeo copy --all docker://${image.from}
+#                     docker://${registry_url}/${image.as}
+#
+# $registry_url is detected automatically
+#
+# If you need to use skopeo-lite instead of skopeo (see README), you can use
+# the --skopeo-cmd parameter when running the script, e.g.:
+#   ./prepare_build.py <builddef> --skopeo-cmd='podman run --rm -ti skopeo-lite'
+base_images: []
+
+# Parent builds to be stolen from a different koji instance
+#
+# parent_builds:
+#   kojihub: <hub url>
+#   kojiroot: <root url>
+#   nvrs:
+#     - <build NVR>
+parent_builds: <optional>
+# TODO: Would it make sense to steal parent builds from 2 (or more) different
+# koji instances?
+
+---
+# README example build
+
+package_name: docker-hello-world
+
+base_images:
+  - from: registry.fedoraproject.org/fedora:30
+    as: fedora:30
+
+---
+# Existing build in different koji instance
+
+package_name: example
+
+build_target: example-target
+build_tag: example-build
+dest_tag: example-dest
+
+parent_builds:
+  kojihub: http://hub.example.com/kojihub
+  kojiroot: http://www.example.com/packages
+  nvrs:
+    - example-base-1-1
+    - other-base-1-1
+
+base_images:
+  - from: registry.example.com/example-base:1.0
+    as: example/base:latest
+  - from: registry.example.com/other-base:1.0
+    as: other-base:1.0
