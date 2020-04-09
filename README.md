@@ -5,7 +5,7 @@ Can be deployed locally using the [example inventory](inventory-example.ini), or
 your own inventory.
 
 
-## Basic usage
+# Basic usage
 
 Run a simple container build on your OSBS-Box:
 
