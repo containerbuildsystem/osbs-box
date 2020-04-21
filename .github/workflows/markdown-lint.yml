@@ -1,0 +1,16 @@
+name: Lint Markdown files
+
+on: [pull_request]
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-latest
+
+    container:
+      image: pipelinecomponents/markdownlint:latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Lint Markdown files
+      run: mdl -g .
