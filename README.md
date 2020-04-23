@@ -278,7 +278,7 @@ You may also want to
     findmnt -r -n -o TARGET | grep "openshift.local.clusterup" | xargs -r umount
     ```
 
-  - The `openshift.local.clusterup` directory created when you ran
+  * The `openshift.local.clusterup` directory created when you ran
     `oc cluster up` (or whatever you passed as the `--base-dir` param to
     `oc cluster up`)
 
