@@ -13,4 +13,5 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Lint Markdown files
-      run: mdl -g .
+      # We have to update to latest mdl
+      run: gem install mdl; /usr/local/bundle/bin/mdl -g .
