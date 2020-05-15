@@ -1,0 +1,140 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: cachito-api
+  description: >
+    cachito-api
+
+labels:
+  build: cachito-api
+
+parameters:
+  - name: OSBS_BOX_REPO
+    description: Repository to build the image from
+    value: https://github.com/containerbuildsystem/osbs-box
+    required: true
+
+  - name: OSBS_BOX_VERSION
+    description: Branch/tag/commit within the repository specified above
+    value: master
+    required: true
+
+  - name: CACHITO_PIP_REF
+    description: >
+      Pip URL to install cachito from (git+<repo>[@<version>])
+    value: git+https://github.com/release-engineering/cachito
+    required: true
+
+  - name: OSBS_BOX_HOST
+    description: Hostname of the machine running OSBS-Box
+    value: localhost
+    required: true
+
+objects:
+  - kind: ImageStream
+    apiVersion: v1
+    metadata:
+      name: cachito-api
+    spec: {}
+
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: cachito-api
+    spec:
+      source:
+        type: Git
+        git:
+          uri: ${OSBS_BOX_REPO}
+          ref: ${OSBS_BOX_VERSION}
+        contextDir: cachito-api
+        secrets:
+          - secret:
+              name: cachito-certs
+            destinationDir: etc/pki/cachito
+        configMaps:
+          - configMap:
+              name: cachito-api-config
+            destinationDir: etc/cachito/
+          - configMap:
+              name: cachito-api-celery
+            destinationDir: etc/cachito/
+      strategy:
+        type: Docker
+        dockerStrategy:
+          noCache: true
+          from:
+            kind: DockerImage
+            name: registry.fedoraproject.org/fedora:32
+          buildArgs:
+            - name: CACHITO_PIP_REF
+              value: ${CACHITO_PIP_REF}
+      output:
+        to:
+          kind: ImageStreamTag
+          name: cachito-api:latest
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: cachito-api
+    spec:
+      replicas: 1
+      selector:
+        app: cachito-api
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          name: cachito-api
+          labels:
+            app: cachito-api
+        spec:
+          containers:
+            - name: cachito-api
+              image: cachito-api:latest
+              ports:
+                - containerPort: 8080
+              volumeMounts:
+                - name: cachito-archives
+                  mountPath: /var/lib/cachito-archives/bundles
+          volumes:
+            - name: cachito-archives
+              persistentVolumeClaim:
+                claimName: cachito-archives
+      triggers:
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - cachito-api
+            from:
+              kind: ImageStreamTag
+              name: cachito-api:latest
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: cachito-api
+    spec:
+      selector:
+        app: cachito-api
+      ports:
+        - name: "443"
+          port: 443
+          targetPort: 8080
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: cachito-api
+    spec:
+      host: cachito-api.${OSBS_BOX_HOST}
+      to:
+        kind: Service
+        name: cachito-api
+      port:
+        targetPort: "443"
+      tls:
+        termination: passthrough
+        insecureEdgeTerminationPolicy: Redirect

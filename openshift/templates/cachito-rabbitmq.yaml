@@ -1,0 +1,81 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: cachito-rabbitmq
+  description: >
+    rabbitmq for cachito
+
+labels:
+  app: cachito-rabbitmq
+
+parameters:
+  - name: OSBS_BOX_HOST
+    description: Hostname of the machine running OSBS-Box
+    value: localhost
+    required: true
+
+objects:
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: cachito-rabbitmq
+    spec:
+      replicas: 1
+      strategy:
+        type: Recreate
+      template:
+        metadata:
+          name: cachito-rabbitmq
+          labels:
+            app: cachito-rabbitmq
+        spec:
+          containers:
+            - name: cachito-rabbitmq
+              image: rabbitmq:3.7-management
+              ports:
+                - containerPort: 15672
+                - containerPort: 5672
+              env:
+                - name: RABBITMQ_DEFAULT_USER
+                  value: "cachito"
+                - name: RABBITMQ_DEFAULT_PASS
+                  value: "cachito"
+
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: cachito-rabbitmq
+    spec:
+      selector:
+        app: cachito-rabbitmq
+      ports:
+        - name: "80"
+          port: 80
+          targetPort: 15672
+        - name: "5672"
+          port: 5672
+          targetPort: 5672
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: cachito-rabbitmq-console
+    spec:
+      host: cachito-rabbitmq-console.${OSBS_BOX_HOST}
+      to:
+        kind: Service
+        name: cachito-rabbitmq
+      port:
+        targetPort: "15672"
+
+  - kind: Route
+    apiVersion: v1
+    metadata:
+      name: cachito-rabbitmq
+    spec:
+      host: cachito-rabbitmq.${OSBS_BOX_HOST}
+      to:
+        kind: Service
+        name: cachito-rabbitmq
+      port:
+        targetPort: "5672"

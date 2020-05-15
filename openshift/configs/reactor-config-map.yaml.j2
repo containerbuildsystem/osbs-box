@@ -53,3 +53,9 @@ skip_koji_check_for_base_image: true
 
 source_containers:
   source_builder_image: "quay.io/ctrs/bsi"
+
+cachito:
+  api_url: "https://cachito-api.{{ cachito_namespace }}"
+  insecure: true
+  auth:
+    ssl_certs_dir: /var/run/secrets/atomic-reactor/kojisecret
