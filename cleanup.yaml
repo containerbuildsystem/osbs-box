@@ -44,6 +44,37 @@
       when: not oc_login.failed
 
 
+- name: Delete cachito
+  hosts: osbs_box_host
+  gather_facts: false
+  tags:
+    - cachito
+    # All tags related to cachito PVs (deleting PVs while in use is a bad idea)
+    - pvs
+    - cachito_pvs
+    - cachito_archives_pv
+    - cachito_athens_storage_pv
+    # One tag to rule them all
+    - everything
+
+  tasks:
+    - name: Delete cachito namespace from openshift
+      command: oc delete namespace "{{ cachito_namespace }}"
+      register: delete_cachito_namespace
+      changed_when: delete_cachito_namespace.rc == 0
+      failed_when: delete_cachito_namespace.rc != 0 and
+                   'not found' not in delete_cachito_namespace.stderr
+      when: not oc_login.failed
+
+    - name: Delete cachito PVs from openshift
+      command: oc delete pv --selector volume=cachito-volume
+      register: delete_cachito_pvs
+      changed_when: delete_cachito_pvs.rc == 0 and
+                    delete_cachito_pvs.stdout != 'No resources found'
+      failed_when: delete_cachito_pvs.rc != 0
+      when: not oc_login.failed
+
+
 - name: Delete docker registry
   hosts: osbs_box_host
   gather_facts: false
@@ -124,6 +155,22 @@
       tags:
         - registry_pv
 
+    - name: Delete cachito-archives PV directory
+      file:
+        path: "{{ cachito_archives_dir }}"
+        state: absent
+      tags:
+        - cachito_pvs
+        - cachito_archives_pv
+
+    - name: Delete cachito-athens-storage PV directory
+      file:
+        path: "{{ cachito_athens_dir }}"
+        state: absent
+      tags:
+        - cachito_pvs
+        - cachito_athens_storage_pv
+
 
 - name: Delete remaining OSBS-Box data
   hosts: osbs_box_host
@@ -139,6 +186,7 @@
         state: absent
       loop:
         - "{{ koji_certs_dir }}"
+        - "{{ cachito_certs_dir }}"
         - "{{ registry_certs_dir }}"
         - "{{ certificates_dir }}"
       tags:
