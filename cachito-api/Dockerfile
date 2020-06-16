@@ -28,7 +28,8 @@ ARG CACHITO_PIP_REF
 # Install Cachito from git
 ENV PIP_PREFIX="/usr"
 RUN pip install "$CACHITO_PIP_REF"
-RUN set -o pipefail && mkdir -p /src && ln -s `pip show cachito | grep Location | cut -d ' ' -f2`/cachito /src/cachito
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN mkdir -p /src && ln -s "$(pip show cachito | grep Location | cut -d ' ' -f2)"/cachito /src/cachito
 
 EXPOSE 8080
 ENTRYPOINT ["entrypoint.sh"]
