@@ -1,1 +1,1 @@
-This directory will be populated by openshift during build.
+This directory will be populated by OpenShift during build.
