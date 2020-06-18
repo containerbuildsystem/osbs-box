@@ -4,7 +4,6 @@ RUN dnf -y install \
     golang \
     git-core \
     mercurial \
-    npm \
     python3-celery \
     python3-GitPython \
     python3-pip \
