@@ -2,7 +2,6 @@ FROM fedora:32
 
 RUN dnf -y install \
     httpd \
-    mod_auth_gssapi \
     mod_ssl \
     python3-celery \
     python3-flask \
