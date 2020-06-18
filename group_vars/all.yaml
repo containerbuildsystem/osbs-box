@@ -33,7 +33,7 @@ koji_namespace: osbs-koji
 orchestrator_namespace: osbs-orchestrator
 worker_namespace: osbs-worker
 registry_namespace: osbs-registry
-cachito_namespace: cachito
+cachito_namespace: osbs-cachito
 
 
 ### Repositories and versions for OSBS components
