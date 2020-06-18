@@ -22,6 +22,7 @@
   hosts: osbs_box_host
   tags:
     - koji
+    - cachito
     - registry
     - namespaces
     - buildroot
@@ -415,6 +416,15 @@
       changed_when: true
       loop:
         "{{ cachito_components }}"
+
+    - name: Set up directories that will serve as backing storage for cachito PVs
+      file:
+        path: "{{ item }}"
+        state: directory
+        setype: container_file_t
+      loop:
+        - "{{ cachito_archives_dir }}"
+        - "{{ cachito_athens_dir }}"
 
     - name: Allow cachito containers to run as any user
       command:
