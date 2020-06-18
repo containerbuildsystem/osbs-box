@@ -52,6 +52,9 @@ objects:
           - secret:
               name: cachito-ca
             destinationDir: etc/ssl/certs
+          - secret:
+              name: cachito-certs
+            destinationDir: etc/pki/cachito
         configMaps:
           - configMap:
               name: cachito-worker-celery
