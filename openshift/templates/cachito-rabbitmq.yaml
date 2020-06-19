@@ -66,16 +66,4 @@ objects:
         kind: Service
         name: cachito-rabbitmq
       port:
-        targetPort: "15672"
-
-  - kind: Route
-    apiVersion: v1
-    metadata:
-      name: cachito-rabbitmq
-    spec:
-      host: cachito-rabbitmq.${OSBS_BOX_HOST}
-      to:
-        kind: Service
-        name: cachito-rabbitmq
-      port:
-        targetPort: "5672"
+        targetPort: "80"
