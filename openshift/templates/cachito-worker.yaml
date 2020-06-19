@@ -6,7 +6,7 @@ metadata:
     cachito-worker
 
 labels:
-  build: cachito-worker
+  app: cachito-worker
 
 parameters:
   - name: OSBS_BOX_REPO
@@ -126,15 +126,3 @@ objects:
         - name: "80"
           port: 80
           targetPort: 8080
-
-  - kind: Route
-    apiVersion: v1
-    metadata:
-      name: cachito-worker
-    spec:
-      host: cachito-worker.${OSBS_BOX_HOST}
-      to:
-        kind: Service
-        name: cachito-worker
-      port:
-        targetPort: "80"

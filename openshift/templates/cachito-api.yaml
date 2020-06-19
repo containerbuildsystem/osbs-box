@@ -6,7 +6,7 @@ metadata:
     cachito-api
 
 labels:
-  build: cachito-api
+  app: cachito-api
 
 parameters:
   - name: OSBS_BOX_REPO
