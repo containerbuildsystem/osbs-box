@@ -1,8 +1,7 @@
 # OSBS-Box
 
 An OpenShift based project that provides an environment for testing OSBS
-components; it can be deployed locally using the [example inventory][], or
-remotely using your own inventory.
+components; it can be deployed locally using the [example inventory][].
 
 ## Basic usage
 
@@ -50,14 +49,14 @@ For more details, refer to [cluster_up_down.md][].
 
 ### Prerequisites
 
-- **On your machine**
-
-  - ansible >= 2.8
-
 - **On the target machine**
-
+  - ansible >= 2.8
   - pyOpenSSL >= 0.15 (for the `openssl_*` ansible modules)
   - an OpenShift cluster, as described above
+
+- **Detailed prerequisites on a Fedora 32 target machine**
+
+  - see [Fedora32.md][]
 
 ### Deployment steps
 
@@ -319,5 +318,6 @@ Coming soon ^TM^
 [example inventory]: ./inventory-example.ini
 [more on that]: #Skopeo-lite
 [cluster_up_down.md]: https://github.com/openshift/origin/blob/release-3.11/docs/cluster_up_down.md
+[Fedora32.md]: ./docs/Fedora32.md
 [group_vars/all.yaml]: ./group_vars/all.yaml
 [deploy.yaml]: ./deploy.yaml
