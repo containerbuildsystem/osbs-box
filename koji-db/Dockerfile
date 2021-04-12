@@ -1,4 +1,4 @@
-FROM postgres
+FROM docker.io/postgres:12
 
 EXPOSE 5432
 

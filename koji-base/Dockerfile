@@ -1,4 +1,4 @@
-FROM fedora
+FROM registry.fedoraproject.org/fedora:33
 
 # Install koji, make sure docs are not excluded by unsetting tsflags
 # (docs include the SQL schema needed to initialize the DB)

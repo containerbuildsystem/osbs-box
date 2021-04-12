@@ -1,4 +1,4 @@
-FROM golang:buster AS build
+FROM docker.io/golang:buster AS build
 
 RUN go get -v "github.com/openshift/imagebuilder/cmd/imagebuilder"
 
