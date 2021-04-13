@@ -63,9 +63,6 @@ objects:
         type: Docker
         dockerStrategy:
           noCache: true
-          from:
-            kind: DockerImage
-            name: registry.fedoraproject.org/fedora:32
           buildArgs:
             - name: CACHITO_PIP_REF
               value: ${CACHITO_PIP_REF}

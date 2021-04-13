@@ -62,9 +62,6 @@ objects:
         type: Docker
         dockerStrategy:
           noCache: true
-          from:
-            kind: DockerImage
-            name: registry.fedoraproject.org/fedora:30
           buildArgs:
             - name: OSBS_CLIENT_PIP_REF
               value: ${OSBS_CLIENT_PIP_REF}

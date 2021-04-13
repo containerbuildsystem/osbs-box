@@ -63,7 +63,7 @@ objects:
         spec:
           containers:
             - name: osbs-registry
-              image: registry:2
+              image: docker.io/registry:2
               ports:
                 - containerPort: 5000
               env:
@@ -78,6 +78,8 @@ objects:
                   mountPath: /var/lib/registry
                 - name: registry-cert
                   mountPath: /etc/pki/registry
+          imagePullSecrets:
+            - name: dockerhub
           volumes:
             - name: registry-data
               persistentVolumeClaim:

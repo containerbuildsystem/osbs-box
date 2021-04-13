@@ -50,9 +50,9 @@ objects:
       strategy:
         type: Docker
         dockerStrategy:
-          from:
-            kind: DockerImage
-            name: postgres:12
+          noCache: true
+          pullSecret:
+            name: dockerhub
       output:
         to:
           kind: ImageStreamTag
