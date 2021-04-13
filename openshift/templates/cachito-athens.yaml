@@ -31,7 +31,7 @@ objects:
         spec:
           containers:
             - name: cachito-athens
-              image: gomods/athens:v0.9.0
+              image: docker.io/gomods/athens:v0.9.0
               ports:
                 - containerPort: 3000
               env:
@@ -42,6 +42,8 @@ objects:
               volumeMounts:
                 - name: cachito-athens-storage
                   mountPath: "/var/lib/athens"
+          imagePullSecrets:
+            - name: dockerhub
           volumes:
             - name: cachito-athens-storage
               persistentVolumeClaim:

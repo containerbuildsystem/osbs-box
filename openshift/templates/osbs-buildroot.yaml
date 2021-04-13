@@ -82,6 +82,8 @@ objects:
               value: ${DOCKERFILE_PARSE_PIP_REF}
             - name: DOCKPULP_PIP_REF
               value: ${DOCKPULP_PIP_REF}
+          pullSecret:
+            name: dockerhub
       output:
         to:
           kind: ImageStreamTag
