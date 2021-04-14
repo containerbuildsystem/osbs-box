@@ -75,3 +75,7 @@ koji_db_data_dir: "{{ osbs_box_data_dir }}/pv/koji-db-data"
 registry_data_dir: "{{ osbs_box_data_dir }}/pv/registry-data"
 cachito_archives_dir: "{{ osbs_box_data_dir }}/pv/cachito-archives"
 cachito_athens_dir: "{{ osbs_box_data_dir }}/pv/cachito-athens-storage"
+
+docker_id: mylogin
+docker_password: password-me
+docker_email: foo@bar.com
