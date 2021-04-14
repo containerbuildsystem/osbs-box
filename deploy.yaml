@@ -50,6 +50,66 @@
         dest: "{{ openshift_files }}/osbs-box.env"
 
 
+- name: Create all projects (namespaces)
+  hosts: osbs_box_host
+  gather_facts: false
+  tags:
+    - namespaces
+    - openshift
+  tasks:
+    - name:
+      command: oc create namespace "{{ item }}"
+      register: create_namespace
+      failed_when: create_namespace.rc != 0
+                  and "already exists" not in create_namespace.stderr
+      changed_when: create_namespace.rc == 0
+      loop:
+        - "{{ koji_namespace }}"
+        - "{{ registry_namespace }}"
+        - "{{ orchestrator_namespace }}"
+        - "{{ worker_namespace }}"
+        - "{{ cachito_namespace }}"
+
+
+- name: Set up dockerhub pull secret
+  hosts: osbs_box_host
+  gather_facts: false
+  tags:
+    - pull_secret
+
+  tasks:
+    - name: Create dockerhub pull secret
+      no_log: true
+      shell:
+        set -o pipefail;
+        oc create secret docker-registry dockerhub
+          --docker-server=docker.io
+          --docker-username="{{ docker_id }}"
+          --docker-password="{{ docker_password }}"
+          --docker-email="{{ docker_email }}"
+          --dry-run
+          --output json |
+        oc --namespace "{{ item }}" replace --force -f -
+      loop:
+        - "{{ registry_namespace }}"
+        - "{{ cachito_namespace }}"
+        - "{{ koji_namespace }}"
+        - "{{ orchestrator_namespace }}"
+        - "{{ worker_namespace }}"
+      changed_when: true
+
+    - name: Link dockerhub pull secret to builder service account
+      tags: link_pull_secret
+      command: oc --namespace "{{ item }}" secrets link builder dockerhub --for=pull
+      loop:
+        - "{{ registry_namespace }}"
+        - "{{ cachito_namespace }}"
+        - "{{ koji_namespace }}"
+        - "{{ orchestrator_namespace }}"
+        - "{{ worker_namespace }}"
+      changed_when: true
+
+
 - name: Run koji containers on openshift
   hosts: osbs_box_host
   gather_facts: false
@@ -67,13 +127,6 @@
     - openshift
 
   tasks:
-    - name: Create koji namespace in openshift
-      command: oc create namespace "{{ koji_namespace }}"
-      register: create_koji_namespace
-      failed_when: create_koji_namespace.rc != 0
-                   and "already exists" not in create_koji_namespace.stderr
-      changed_when: create_koji_namespace.rc == 0
-
     - name: Create koji-certs secret in koji namespace
       shell:
         set -o pipefail;
@@ -162,13 +215,6 @@
     - openshift
 
   tasks:
-    - name: Create registry namespace in openshift
-      command: oc create namespace "{{ registry_namespace }}"
-      register: create_registry_namespace
-      failed_when: create_registry_namespace.rc != 0
-                   and "already exists" not in create_registry_namespace.stderr
-      changed_when: create_registry_namespace.rc == 0
-
     - name: Create registry-cert secret in openshift
       shell:
         set -o pipefail;
@@ -203,33 +249,33 @@
         oc process -f "{{ openshift_files }}/osbs-registry.yaml"
                    --param-file "{{ openshift_files }}/osbs-box.env"
                    --ignore-unknown-parameters |
-        oc --namespace "{{ registry_namespace }}" apply -f -
+        oc --namespace "{{ registry_namespace }}" apply -f -;
+        oc --namespace "{{ registry_namespace }}" rollout status dc/osbs-registry --watch=true
+      changed_when: true
+
+    - name: Completely remove dockerhub pull secret from osbs-registry project
+      shell:
+        set -o pipefail;
+        oc --namespace "{{ registry_namespace }}" secrets unlink builder dockerhub;
+        oc --namespace "{{ registry_namespace }}" delete secret dockerhub;
+        oc --namespace "{{ registry_namespace }}" patch dc osbs-registry --type json -p '[{ "op":"remove", "path":"/spec/template/spec/imagePullSecrets" }]'
       changed_when: true
 
 
-- name: Set up OSBS orchestrator and worker namespaces
+- name: Set up OSBS orchestrator and worker projects
   hosts: osbs_box_host
   gather_facts: false
   vars:
     # This is a constant, please do not override
-    namespaces:
+    projects:
       - "{{ orchestrator_namespace }}"
       - "{{ worker_namespace }}"
   tags:
-    - namespaces
+    - osbs
     - openshift
 
   tasks:
-    - name: Create orchestrator and worker namespaces in openshift
-      command: oc create namespace "{{ item }}"
-      register: create_namespace
-      failed_when: create_namespace.rc != 0
-                   and "already exists" not in create_namespace.stderr
-      changed_when: create_namespace.rc == 0
-      loop:
-        "{{ namespaces }}"
-
-    - name: Create kojisecret in orchestrator and worker namespaces
+    - name: Create kojisecret in orchestrator and worker projects
       shell:
         set -o pipefail;
         oc create secret generic kojisecret
@@ -241,7 +287,7 @@
         oc --namespace "{{ item }}" replace --force -f -
       changed_when: true
       loop:
-        "{{ namespaces }}"
+        "{{ projects }}"
 
     - name: Query openshift for osbs-registry IP
       command: oc --namespace "{{ registry_namespace }}" get svc osbs-registry
@@ -286,39 +332,11 @@
                   add-role-to-user "{{ item.1 }}" -z builder
       changed_when: true
       loop:
-        "{{ namespaces | product(roles) | list }}"
+        "{{ projects | product(roles) | list }}"
       vars:
         roles:
           - "edit"
           - "system:build-strategy-custom"
-
-
-- name: Build OSBS buildroot
-  hosts: osbs_box_host
-  gather_facts: false
-  tags:
-    - buildroot
-    - openshift
-
-  tasks:
-    - name: Copy osbs-buildroot template to openshift files dir
-      copy:
-        src: openshift/templates/osbs-buildroot.yaml
-        dest: "{{ openshift_files }}/osbs-buildroot.yaml"
-
-    - name: Create openshift resources for osbs-buildroot
-      shell:
-        set -o pipefail;
-        oc process -f "{{ openshift_files }}/osbs-buildroot.yaml"
-                   --param-file "{{ openshift_files }}/osbs-box.env"
-                   --ignore-unknown-parameters |
-        oc --namespace "{{ orchestrator_namespace }}" apply -f -
-      changed_when: true
-
-    - name: Build osbs-buildroot
-      command: oc --namespace "{{ orchestrator_namespace }}"
-                  start-build osbs-buildroot
-      changed_when: true
 
 
 - name: Run cachito containers on openshift
@@ -337,13 +355,6 @@
     - openshift
 
   tasks:
-    - name: Create cachito namespace in openshift
-      command: oc create namespace "{{ cachito_namespace }}"
-      register: create_cachito_namespace
-      failed_when: create_cachito_namespace.rc != 0
-                   and "already exists" not in create_cachito_namespace.stderr
-      changed_when: create_cachito_namespace.rc == 0
-
     - name: Create cachito-certs secret in cachito namespace
       shell:
         set -o pipefail;
@@ -438,4 +449,32 @@
 
     - name: Build (and automatically deploy) cachito cachito-worker
       command: oc --namespace "{{ cachito_namespace }}" start-build cachito-worker
+      changed_when: true
+
+
+- name: Build OSBS buildroot
+  hosts: osbs_box_host
+  gather_facts: false
+  tags:
+    - buildroot
+    - openshift
+
+  tasks:
+    - name: Copy osbs-buildroot template to openshift files dir
+      copy:
+        src: openshift/templates/osbs-buildroot.yaml
+        dest: "{{ openshift_files }}/osbs-buildroot.yaml"
+
+    - name: Create openshift resources for osbs-buildroot
+      shell:
+        set -o pipefail;
+        oc process -f "{{ openshift_files }}/osbs-buildroot.yaml"
+                   --param-file "{{ openshift_files }}/osbs-box.env"
+                   --ignore-unknown-parameters |
+        oc --namespace "{{ orchestrator_namespace }}" apply -f -
+      changed_when: true
+
+    - name: Build osbs-buildroot
+      command: oc --namespace "{{ orchestrator_namespace }}"
+                  start-build osbs-buildroot
       changed_when: true
