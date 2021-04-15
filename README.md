@@ -58,23 +58,26 @@ For more details, refer to [cluster_up_down.md][].
 
   - see [Fedora32.md][]
 
+- **Note about Docker Hub (docker.io image registry)**
+
+  - You *must* have a [Docker Hub] account of some kind for pulling necessary
+    images. Depending on how you use OSBS Box, you *might* require a paid account,
+    as you *might* hit the free account's hourly limit on image pulls.
+  - Consult [dockerhub.md][] for more details.
+
 ### Deployment steps
 
 1. If you haven't already, `git clone` this repository
-1. Take a look at [group_vars/all.yaml][]
+1. Take a look at [group_vars/all.yaml][]<sup id="a1">[1](#f1)</sup>
+1. You **MUST** override the 'docker_*' group vars in a YAML file, and provide
+   that file to the ansible-playbook command via (e.g.) `-e @overrides.yaml`.
+   Consult [dockerhub.md][] for more details. (Note that the '@' *is a necessary
+   part of the command*)
 1. Provide an inventory file, or use the example one
 1. Run `ansible-playbook deploy.yaml -i <inventory file>`
 
    If you are sure that you do not need to re-generate certificates, use
    `--tags=openshift`
-
-**NOTE**: Rather than changing the configuration in [group_vars/all.yaml][],
-you might want to create a file containing your overrides (e.g.
-`overrides.yaml`) and run the playbooks like
-
-```shell
-ansible-playbook <playbook> -i <inventory> -e '@overrides.yaml'
-```
 
 **NOTE**: [deploy.yaml][] only starts the build, it does not wait for the entire
 deployment to finish. You can check the deployment status in the web console or
@@ -291,7 +294,8 @@ Coming soon ^TM^
   - Problem
 
     ```text
-    An error has occurred in the web interface code. This could be due to a bug or a configuration issue.
+    An error has occurred in the web interface code. This could be due to a bug
+    or a configuration issue.
     koji.AuthError: could not get user for principal: <user>
     ```
 
@@ -315,7 +319,14 @@ Coming soon ^TM^
       containers getting restarted 2 or 3 times after each deployment (except
       for the initial deployment, that works fine)
 
+---
+
+<b id="f1">1.</b> It's better to override group vars via `overrides.yaml` than
+to change the global configuration in [group_vars/all.yaml][] [↩](#a1)
+
 [example inventory]: ./inventory-example.ini
+[Docker Hub]: https://hub.docker.com
+[dockerhub.md]: ./docs/dockerhub.md
 [more on that]: #Skopeo-lite
 [cluster_up_down.md]: https://github.com/openshift/origin/blob/release-3.11/docs/cluster_up_down.md
 [Fedora32.md]: ./docs/Fedora32.md

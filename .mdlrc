@@ -1,2 +1,1 @@
-style "./.mdlint_style"
-
+style '.mdl_style.rb'
