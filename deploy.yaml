@@ -57,7 +57,7 @@
     - namespaces
     - openshift
   tasks:
-    - name:
+    - name: Create the project
       command: oc create namespace "{{ item }}"
       register: create_namespace
       failed_when: create_namespace.rc != 0
