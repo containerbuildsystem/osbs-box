@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Install ansible-lint
-      run: pip3 install ansible-lint
+      run: pip3 install "ansible-lint[yamllint]" "ansible>=2.9"
 
     - name: Lint playbooks
       run: ansible-lint deploy.yaml cleanup.yaml --force-color
