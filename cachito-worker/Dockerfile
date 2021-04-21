@@ -18,7 +18,7 @@ RUN chmod -R a+r /etc/cachito/celery.py
 ARG CACHITO_PIP_REF
 # Install Cachito from git
 ENV PIP_PREFIX="/usr"
-RUN pip install "$CACHITO_PIP_REF"
+RUN pip install --no-cache-dir "$CACHITO_PIP_REF"
 
 EXPOSE 8080
 CMD ["/bin/celery-3", "-A", "cachito.workers.tasks", "worker", "--loglevel=debug"]

@@ -2,15 +2,10 @@ FROM docker.io/golang:buster AS build
 
 RUN go get -v "github.com/openshift/imagebuilder/cmd/imagebuilder"
 
-
 FROM registry.fedoraproject.org/fedora:30
 
-# Choose python version
+# Set python version
 ARG PY_VER="3"
-RUN if [ "$PY_VER" != 3 ]; then \
-        dnf -y install "python${PY_VER}" \
-                       "python${PY_VER}-pip"; \
-    fi
 
 # Install non-OSBS buildroot components
 COPY --from=build "/go/bin/imagebuilder" "/usr/bin/imagebuilder"
@@ -21,15 +16,16 @@ RUN dnf -y install "fedpkg-minimal" \
                    "python${PY_VER}-rpm" \
                    "python${PY_VER}-koji" \
                    "python${PY_VER}-libmodulemd" \
-                   "skopeo"
+                   "skopeo" \
+    && dnf clean all
 
 # Install stuff that will be needed for pip-installing OSBS components from git
 RUN dnf -y install "git-core" \
                    "python${PY_VER}-devel" \
                    "krb5-devel" \
                    "xz-devel" \
-                   "gcc" && \
-    dnf clean all
+                   "gcc" \
+    && dnf clean all
 
 # Pip URLs for OSBS components (git+<repo>[@<version>])
 ARG ATOMIC_REACTOR_PIP_REF
@@ -53,7 +49,7 @@ ENV PYTHONPATH="/usr/local/lib/python2.7/site-packages/:${PYTHONPATH}"
 
 # Add script for building source container images
 RUN curl "https://raw.githubusercontent.com/containers/BuildSourceImage/master/BuildSourceImage.sh" \
-          -o /usr/bin/bsi
-RUN chmod +x /usr/bin/bsi
+          -o /usr/bin/bsi \
+    && chmod +x /usr/bin/bsi
 
 CMD ["atomic-reactor", "--verbose", "inside-build"]
