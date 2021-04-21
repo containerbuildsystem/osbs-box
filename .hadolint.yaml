@@ -1,3 +1,4 @@
 ignored:
   - DL3006  # Always tag FROM images (OpenShift replaces those)
   - DL3013  # Install specific package versions with pip
+  - DL3041 	# Specify version with dnf install -y <package>-<version>
