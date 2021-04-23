@@ -11,7 +11,7 @@ RUN dnf -y install "httpd" \
     dnf clean all
 
 # Update koji-containerbuild and copy the hub plugin to the right location
-RUN $PIP install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
+RUN pip3 --no-cache-dir install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
     copy-kcb-plugin.sh "hub"
 
 # Certificates are mode 0600 and owned by root, apache needs read access too

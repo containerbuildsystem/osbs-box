@@ -37,9 +37,6 @@ cachito_namespace: osbs-cachito
 
 
 ### Repositories and versions for OSBS components
-
-buildroot_python_version: 3
-
 atomic_reactor_repo: https://github.com/containerbuildsystem/atomic-reactor
 atomic_reactor_version: master
 

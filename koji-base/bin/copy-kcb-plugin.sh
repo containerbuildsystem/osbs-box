@@ -1,10 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+purelib=$(python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
+
 # After pip-installing koji-containerbuild from git, use this script to copy
 # the specified plugin (cli, hub or builder) to the correct location.
 
-KCB="/usr/lib/$PYTHON/site-packages/koji_containerbuild"
+KCB=${purelib}"/koji_containerbuild"
 
 plugin=${1:-''}
 
@@ -16,7 +18,7 @@ fi
 case "$plugin" in
     cli)
         src="$KCB/plugins/cli_containerbuild.py"
-        dest_dir="/usr/lib/$PYTHON/site-packages/koji_cli_plugins/"
+        dest_dir=${purelib}"/koji_cli_plugins/"
         ;;
     hub|builder)
         src="$KCB/plugins/${plugin}_containerbuild.py"
