@@ -9,8 +9,8 @@ RUN dnf -y install "koji-builder" \
 
 # Update osbs-client and koji-containerbuild,
 # copy the builder plugin to the right location
-RUN $PIP install -U "$OSBS_CLIENT_PIP_REF" && \
-    $PIP install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
+RUN pip3 --no-cache-dir install -U "$OSBS_CLIENT_PIP_REF" && \
+    pip3 --no-cache-dir install -U "$KOJI_CONTAINERBUILD_PIP_REF" && \
     copy-kcb-plugin.sh "builder"
 
 COPY bin/ /usr/local/bin/

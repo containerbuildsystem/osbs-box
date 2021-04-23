@@ -20,11 +20,6 @@ parameters:
     value: master
     required: true
 
-  - name: PY_VER
-    description: Version of python to use (2 or 3), default 3
-    value: "3"
-    required: false
-
   - name: ATOMIC_REACTOR_PIP_REF
     description: >
       Pip URL to install atomic-reactor from (git+<repo>[@<version>])
@@ -72,8 +67,6 @@ objects:
         dockerStrategy:
           noCache: true
           buildArgs:
-            - name: PY_VER
-              value: ${PY_VER}
             - name: ATOMIC_REACTOR_PIP_REF
               value: ${ATOMIC_REACTOR_PIP_REF}
             - name: OSBS_CLIENT_PIP_REF

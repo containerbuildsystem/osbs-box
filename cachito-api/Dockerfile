@@ -26,7 +26,7 @@ COPY cachito-httpd.conf /etc/httpd/conf/httpd.conf
 ARG CACHITO_PIP_REF
 # Install Cachito from git
 ENV PIP_PREFIX="/usr"
-RUN pip install --no-cache-dir "$CACHITO_PIP_REF"
+RUN pip3 install --no-cache-dir "$CACHITO_PIP_REF"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN mkdir -p /src && ln -s "$(pip show cachito | grep Location | cut -d ' ' -f2)"/cachito /src/cachito
 

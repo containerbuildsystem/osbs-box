@@ -1,5 +1,9 @@
 FROM registry.fedoraproject.org/fedora:33
 
+# The `python` symlink is not installed by default -_-
+RUN dnf -y install python "python3-pip" \
+    && dnf clean all
+
 # Install koji, make sure docs are not excluded by unsetting tsflags
 # (docs include the SQL schema needed to initialize the DB)
 RUN dnf --setopt tsflags="" -y install "koji" \
@@ -11,13 +15,6 @@ RUN dnf -y install "git-core" && \
 
 COPY bin/ /usr/local/bin/
 COPY etc/ /etc/
-
-# Setup for eliminating differences between python versions
-ENV PY_VER_MAJOR="3" \
-    PY_VER_MAJOR_MINOR="3.7"
-
-ENV PYTHON="python${PY_VER_MAJOR_MINOR}" \
-    PIP="pip${PY_VER_MAJOR_MINOR}"
 
 # By default, pip3 installs stuff in /usr/local/
 ENV PIP_PREFIX="/usr"
