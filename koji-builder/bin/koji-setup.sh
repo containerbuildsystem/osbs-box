@@ -57,3 +57,6 @@ check_result "user already exists: kojiosbs" \
 
 check_result 'User already has access to content generator atomic-reactor' \
              koji grant_cg_access kojiosbs atomic-reactor
+
+check_result 'User already has access to content generator atomic-reactor' \
+             koji grant_cg_access kojiadmin atomic-reactor
