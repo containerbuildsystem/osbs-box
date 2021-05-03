@@ -12,7 +12,6 @@
         - "{{ certificates_dir }}"
         - "{{ koji_certs_dir }}"
         - "{{ registry_certs_dir }}"
-        - "{{ cachito_certs_dir }}"
 
     - name: Generate certificates
       include_tasks: tasks/generate-certs.yaml
@@ -22,7 +21,6 @@
   hosts: osbs_box_host
   tags:
     - koji
-    - cachito
     - registry
     - namespaces
     - buildroot
@@ -68,7 +66,6 @@
         - "{{ registry_namespace }}"
         - "{{ orchestrator_namespace }}"
         - "{{ worker_namespace }}"
-        - "{{ cachito_namespace }}"
 
 
 - name: Set up dockerhub pull secret
@@ -92,7 +89,6 @@
         oc --namespace "{{ item }}" replace --force -f -
       loop:
         - "{{ registry_namespace }}"
-        - "{{ cachito_namespace }}"
         - "{{ koji_namespace }}"
         - "{{ orchestrator_namespace }}"
         - "{{ worker_namespace }}"
@@ -103,7 +99,6 @@
       command: oc --namespace "{{ item }}" secrets link builder dockerhub --for=pull
       loop:
         - "{{ registry_namespace }}"
-        - "{{ cachito_namespace }}"
         - "{{ koji_namespace }}"
         - "{{ orchestrator_namespace }}"
         - "{{ worker_namespace }}"
@@ -337,119 +332,6 @@
         roles:
           - "edit"
           - "system:build-strategy-custom"
-
-
-- name: Run cachito containers on openshift
-  hosts: osbs_box_host
-  gather_facts: false
-  vars:
-    # This is a constant, please do not override
-    cachito_components:
-      - cachito-volumes
-      - cachito-api
-      - cachito-worker
-      - cachito-rabbitmq
-      - cachito-athens
-  tags:
-    - cachito
-    - openshift
-
-  tasks:
-    - name: Create cachito-certs secret in cachito namespace
-      shell:
-        set -o pipefail;
-        oc create secret generic cachito-certs
-            --from-file "{{ certificates_dir }}/osbs-box-ca.crt"
-            --from-file "{{ cachito_certs_dir }}/cachito-api.crt"
-            --from-file "{{ cachito_certs_dir }}/cachito-api.key"
-            --from-file "{{ cachito_certs_dir }}/cachito-api.pem"
-            --from-file "{{ cachito_certs_dir }}/cachito-worker.crt"
-            --from-file "{{ cachito_certs_dir }}/cachito-worker.key"
-            --from-file "{{ cachito_certs_dir }}/cachito-worker.pem"
-            --dry-run
-            --output json |
-        oc --namespace "{{ cachito_namespace }}" replace --force -f -
-      changed_when: true
-
-    - name: Create cachito-ca secret in cachito namespace
-      shell:
-        set -o pipefail;
-        oc create secret generic cachito-ca
-            --from-file "{{ certificates_dir }}/osbs-box-ca.crt"
-            --dry-run
-            --output json |
-        oc --namespace "{{ cachito_namespace }}" replace --force -f -
-      changed_when: true
-
-    - name: Process cachito config templates, output in openshift files dir
-      template:
-        src: "openshift/configs/{{ item }}.j2"
-        dest: "{{ openshift_files }}/{{ item }}"
-      loop:
-        - cachito-api-config.py
-        - cachito-api-celery.py
-        - cachito-worker-celery.py
-
-    - name: Create cachito configmaps in cachito namespace
-      shell:
-        set -o pipefail;
-        oc create configmap "{{ item.name }}"
-            --from-file "{{ item.dest }}={{ openshift_files }}/{{ item.src }}"
-            --dry-run
-            --output json |
-        oc --namespace "{{ cachito_namespace }}" replace --force -f -
-      changed_when: true
-      loop:
-        - name: cachito-api-config
-          src: cachito-api-config.py
-          dest: settings.py
-        - name: cachito-api-celery
-          src: cachito-api-celery.py
-          dest: celery.py
-        - name: cachito-worker-celery
-          src: cachito-worker-celery.py
-          dest: celery.py
-
-    - name: Copy openshift templates for cachito components to openshift files dir
-      copy:
-        src: "openshift/templates/{{ item }}.yaml"
-        dest: "{{ openshift_files }}/{{ item }}.yaml"
-      loop:
-        "{{ cachito_components }}"
-
-    - name: Create openshift resources for all cachito components
-      shell:
-        set -o pipefail;
-        oc process -f "{{ openshift_files }}/{{ item }}.yaml"
-                   --param-file "{{ openshift_files }}/osbs-box.env"
-                   --ignore-unknown-parameters |
-        oc --namespace "{{ cachito_namespace }}" apply -f -
-      changed_when: true
-      loop:
-        "{{ cachito_components }}"
-
-    - name: Set up directories that will serve as backing storage for cachito PVs
-      file:
-        path: "{{ item }}"
-        state: directory
-        setype: container_file_t
-      loop:
-        - "{{ cachito_archives_dir }}"
-        - "{{ cachito_athens_dir }}"
-
-    - name: Allow cachito containers to run as any user
-      command:
-        oc --namespace "{{ cachito_namespace }}" adm policy add-scc-to-user anyuid
-           --serviceaccount default
-      changed_when: true
-
-    - name: Build (and automatically deploy) cachito cachito-api
-      command: oc --namespace "{{ cachito_namespace }}" start-build cachito-api
-      changed_when: true
-
-    - name: Build (and automatically deploy) cachito cachito-worker
-      command: oc --namespace "{{ cachito_namespace }}" start-build cachito-worker
-      changed_when: true
 
 
 - name: Build OSBS buildroot
