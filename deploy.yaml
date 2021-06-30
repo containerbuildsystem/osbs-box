@@ -185,15 +185,6 @@
       loop:
         "{{ koji_components }}"
 
-    - name: Set up directories that will serve as backing storage for koji PVs
-      file:
-        path: "{{ item }}"
-        state: directory
-        setype: container_file_t
-      loop:
-        - "{{ koji_files_dir }}"
-        - "{{ koji_db_data_dir }}"
-
     - name: Allow koji containers to run as any user
       command:
         oc --namespace "{{ koji_namespace }}" adm policy add-scc-to-user anyuid
@@ -223,12 +214,6 @@
             --output json |
         oc -n "{{ registry_namespace }}" replace --force -f -
       changed_when: true
-
-    - name: Set up directory for registry PV storage
-      file:
-        path: "{{ registry_data_dir }}"
-        state: directory
-        setype: container_file_t
 
     - name: Allow registry container to run as any user
       command:

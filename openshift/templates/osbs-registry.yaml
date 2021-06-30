@@ -9,10 +9,6 @@ metadata:
     It is simply the registry:2 docker image using a HostPath PV for its data.
 
 parameters:
-  - name: REGISTRY_DATA_DIR
-    description: Local directory for registry data
-    required: true
-
   - name: OSBS_BOX_HOST
     description: Hostname of the machine running OSBS-Box
     value: localhost
@@ -26,19 +22,6 @@ labels:
   app: osbs-registry
 
 objects:
-  - kind: PersistentVolume
-    apiVersion: v1
-    metadata:
-      name: registry-data
-    spec:
-      hostPath:
-        path: ${REGISTRY_DATA_DIR}
-      accessModes:
-        - ReadWriteOnce
-      capacity:
-        storage: 100Gi
-      persistentVolumeReclaimPolicy: Retain
-
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:

@@ -19,11 +19,6 @@
   gather_facts: false
   tags:
     - koji
-    # All tags related to koji PVs (deleting PVs while in use is a bad idea)
-    - pvs
-    - koji_pvs
-    - koji_db_pv
-    - koji_files_pv
     # One tag to rule them all
     - everything
 
@@ -36,23 +31,12 @@
                    'not found' not in delete_koji_namespace.stderr
       when: not oc_login.failed
 
-    - name: Delete koji PVs from openshift
-      command: oc delete pv --selector volume=koji-volume
-      register: delete_koji_pvs
-      changed_when: delete_koji_pvs.rc == 0 and
-                    delete_koji_pvs.stdout != 'No resources found'
-      failed_when: delete_koji_pvs.rc != 0
-      when: not oc_login.failed
-      ignore_errors: true
-
 
 - name: Delete docker registry
   hosts: localhost
   gather_facts: false
   tags:
     - registry
-    - pvs
-    - registry_pv
     - everything
 
   tasks:
@@ -64,14 +48,6 @@
                    'not found' not in delete_registry_namespace.stderr
       when: not oc_login.failed
       ignore_errors: true
-
-    - name: Delete registry PV from openshift
-      command: oc delete pv registry-data
-      register: delete_registry_pv
-      changed_when: delete_registry_pv.rc == 0
-      failed_when: delete_registry_pv.rc != 0 and
-                   'not found' not in delete_registry_pv.stderr
-      when: not oc_login.failed
 
 
 - name: Delete OSBS orchestrator and worker namespaces
@@ -93,39 +69,6 @@
         - "{{ worker_namespace }}"
       when: not oc_login.failed
       ignore_errors: true
-
-- name: Delete persistent volume data
-  hosts: osbs_box_host
-  gather_facts: false
-  become: true
-  tags:
-    - never
-    - pvs
-    - everything
-
-  tasks:
-    - name: Delete koji-db-data PV directory
-      file:
-        path: "{{ koji_db_data_dir }}"
-        state: absent
-      tags:
-        - koji_pvs
-        - koji_db_pv
-
-    - name: Delete koji-files PV directory
-      file:
-        path: "{{ koji_files_dir }}"
-        state: absent
-      tags:
-        - koji_pvs
-        - koji_files_pv
-
-    - name: Delete registry-data PV directory
-      file:
-        path: "{{ registry_data_dir }}"
-        state: absent
-      tags:
-        - registry_pv
 
 
 - name: Delete remaining OSBS-Box data

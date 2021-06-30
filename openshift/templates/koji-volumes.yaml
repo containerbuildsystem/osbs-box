@@ -12,14 +12,6 @@ metadata:
     The persistent volume claims that bind to these PVs are also defined here.
 
 parameters:
-  - name: KOJI_FILES_DIR
-    description: Local directory for koji files (the /mnt/koji/ structure)
-    required: true
-
-  - name: KOJI_DB_DATA_DIR
-    description: Local directory for koji-db postgresql data
-    required: true
-
   - name: OCP_USER
     description: OCP username to prefix PVCs with
     required: true
@@ -28,34 +20,6 @@ labels:
   volume: koji-volume
 
 objects:
-  - kind: PersistentVolume
-    apiVersion: v1
-    metadata:
-      name: koji-files
-    spec:
-      hostPath:
-        path: ${KOJI_FILES_DIR}
-      accessModes:
-        # Can be mounted R/W by one node (node as in machine)
-        # The only supported access mode for HostPaths PVs
-        - ReadWriteOnce
-      capacity:
-        storage: 100Gi
-      persistentVolumeReclaimPolicy: Retain
-
-  - kind: PersistentVolume
-    apiVersion: v1
-    metadata:
-      name: koji-db-data
-    spec:
-      hostPath:
-        path: ${KOJI_DB_DATA_DIR}
-      accessModes:
-        - ReadWriteOnce
-      capacity:
-        storage: 100Gi
-      persistentVolumeReclaimPolicy: Retain
-
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
