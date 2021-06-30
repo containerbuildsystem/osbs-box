@@ -10,8 +10,8 @@ clusters:
 clusters_client_config_dir: /var/run/secrets/atomic-reactor/client-config-secret
 
 koji:
-  hub_url: https://koji-hub.{{ koji_namespace }}/kojihub
-  root_url: https://koji-hub.{{ koji_namespace }}/kojifiles
+  hub_url: https://koji-hub.{{ koji_project }}/kojihub
+  root_url: https://koji-hub.{{ koji_project }}/kojifiles
   auth:
     ssl_certs_dir: /var/run/secrets/atomic-reactor/kojisecret
 

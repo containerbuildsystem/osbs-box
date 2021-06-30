@@ -25,7 +25,7 @@
   tags:
     - koji
     - registry
-    - namespaces
+    - projects
     - buildroot
     # One tag for all openshift applications
     - openshift
@@ -48,25 +48,24 @@
         dest: "{{ openshift_files }}/osbs-box.env"
 
 
-- name: Create all projects (namespaces)
-  hosts: osbs_box_host
+- name: Create all projects
   hosts: localhost
   gather_facts: false
   tags:
-    - namespaces
+    - projects
     - openshift
   tasks:
     - name: Create the project
-      command: oc create namespace "{{ item }}"
-      register: create_namespace
-      failed_when: create_namespace.rc != 0
-                  and "already exists" not in create_namespace.stderr
-      changed_when: create_namespace.rc == 0
+      command: oc new-project "{{ item }}"
+      register: new_project
+      failed_when: new_project.rc != 0
+                  or "already exists" in new_project.stderr
+      changed_when: new_project.rc == 0
       loop:
-        - "{{ koji_namespace }}"
-        - "{{ registry_namespace }}"
-        - "{{ orchestrator_namespace }}"
-        - "{{ worker_namespace }}"
+        - "{{ koji_project }}"
+        - "{{ registry_project }}"
+        - "{{ orchestrator_project }}"
+        - "{{ worker_project }}"
 
 
 - name: Set up dockerhub pull secret
@@ -89,20 +88,20 @@
           --output json |
         oc -n "{{ item }}" replace --force -f -
       loop:
-        - "{{ registry_namespace }}"
-        - "{{ koji_namespace }}"
-        - "{{ orchestrator_namespace }}"
-        - "{{ worker_namespace }}"
+        - "{{ registry_project }}"
+        - "{{ koji_project }}"
+        - "{{ orchestrator_project }}"
+        - "{{ worker_project }}"
       changed_when: true
 
     - name: Link dockerhub pull secret to builder service account
       tags: link_pull_secret
       command: oc -n "{{ item }}" secrets link builder dockerhub --for=pull
       loop:
-        - "{{ registry_namespace }}"
-        - "{{ koji_namespace }}"
-        - "{{ orchestrator_namespace }}"
-        - "{{ worker_namespace }}"
+        - "{{ registry_project }}"
+        - "{{ koji_project }}"
+        - "{{ orchestrator_project }}"
+        - "{{ worker_project }}"
       changed_when: true
 
 
@@ -136,7 +135,7 @@
             --from-file "{{ koji_certs_dir }}/kojiosbs.pem"
             --dry-run=client
             --output json |
-        oc -n "{{ koji_namespace }}" replace --force -f -
+        oc -n "{{ koji_project }}" replace --force -f -
       changed_when: true
 
     - name: Process koji config templates, output in openshift files dir
@@ -155,7 +154,7 @@
             --from-file "{{ item.dest }}={{ openshift_files }}/{{ item.src }}"
             --dry-run=client
             --output json |
-        oc -n "{{ koji_namespace }}" replace --force -f -
+        oc -n "{{ koji_project }}" replace --force -f -
       changed_when: true
       loop:
         - name: koji-builder-osbs
@@ -180,7 +179,7 @@
         oc process -f "{{ openshift_files }}/{{ item }}.yaml"
                    --param-file "{{ openshift_files }}/osbs-box.env"
                    --ignore-unknown-parameters |
-        oc -n "{{ koji_namespace }}" apply -f -
+        oc -n "{{ koji_project }}" apply -f -
       changed_when: true
       loop:
         "{{ koji_components }}"
@@ -192,7 +191,7 @@
       changed_when: true
 
     - name: Build (and automatically deploy) koji components
-      command: oc -n "{{ koji_namespace }}" start-build koji-base
+      command: oc -n "{{ koji_project }}" start-build koji-base
       changed_when: true
 
 
@@ -212,7 +211,7 @@
             --from-file "{{ registry_certs_dir }}/osbs-registry.key"
             --dry-run=client
             --output json |
-        oc -n "{{ registry_namespace }}" replace --force -f -
+        oc -n "{{ registry_project }}" replace --force -f -
       changed_when: true
 
     - name: Allow registry container to run as any user
@@ -233,16 +232,16 @@
         oc process -f "{{ openshift_files }}/osbs-registry.yaml"
                    --param-file "{{ openshift_files }}/osbs-box.env"
                    --ignore-unknown-parameters |
-        oc -n "{{ registry_namespace }}" apply -f -;
-        oc -n "{{ registry_namespace }}" rollout status dc/osbs-registry --watch=true
+        oc -n "{{ registry_project }}" apply -f -;
+        oc -n "{{ registry_project }}" rollout status dc/osbs-registry --watch=true
       changed_when: true
 
     - name: Completely remove dockerhub pull secret from osbs-registry project
       shell:
         set -o pipefail;
-        oc -n "{{ registry_namespace }}" secrets unlink builder dockerhub;
-        oc -n "{{ registry_namespace }}" delete secret dockerhub;
-        oc -n "{{ registry_namespace }}" patch dc osbs-registry
+        oc -n "{{ registry_project }}" secrets unlink builder dockerhub;
+        oc -n "{{ registry_project }}" delete secret dockerhub;
+        oc -n "{{ registry_project }}" patch dc osbs-registry
            --type json -p '[{ "op":"remove", "path":"/spec/template/spec/imagePullSecrets" }]'
       changed_when: true
 
@@ -253,8 +252,8 @@
   vars:
     # This is a constant, please do not override
     projects:
-      - "{{ orchestrator_namespace }}"
-      - "{{ worker_namespace }}"
+      - "{{ orchestrator_project }}"
+      - "{{ worker_project }}"
   tags:
     - osbs
     - openshift
@@ -275,7 +274,7 @@
         "{{ projects }}"
 
     - name: Query openshift for osbs-registry IP
-      command: oc -n "{{ registry_namespace }}" get svc osbs-registry
+      command: oc -n "{{ registry_project }}" get svc osbs-registry
                   --output 'jsonpath={ .spec.clusterIP }'
       register: registry_ip_query
       changed_when: false
@@ -293,24 +292,24 @@
         - reactor-config-map.yaml
         - client-config-secret.conf
 
-    - name: Create reactor-config-map in orchestrator namespace
+    - name: Create reactor-config-map in orchestrator project
       shell:
         set -o pipefail;
         oc create configmap reactor-config-map
           --from-file "config.yaml={{ openshift_files }}/reactor-config-map.yaml"
           --dry-run=client
           --output json |
-        oc -n "{{ orchestrator_namespace }}" replace --force -f -
+        oc -n "{{ orchestrator_project }}" replace --force -f -
       changed_when: true
 
-    - name: Create client-config-secret in orchestrator namespace
+    - name: Create client-config-secret in orchestrator project
       shell:
         set -o pipefail;
         oc create secret generic client-config-secret
           --from-file "osbs.conf={{ openshift_files }}/client-config-secret.conf"
           --dry-run=client
           --output json |
-        oc -n "{{ orchestrator_namespace }}" replace --force -f -
+        oc -n "{{ orchestrator_project }}" replace --force -f -
       changed_when: true
 
     - name: Add necessary roles to builder serviceaccounts
@@ -345,10 +344,10 @@
         oc process -f "{{ openshift_files }}/osbs-buildroot.yaml"
                    --param-file "{{ openshift_files }}/osbs-box.env"
                    --ignore-unknown-parameters |
-        oc -n "{{ orchestrator_namespace }}" apply -f -
+        oc -n "{{ orchestrator_project }}" apply -f -
       changed_when: true
 
     - name: Build osbs-buildroot
-      command: oc -n "{{ orchestrator_namespace }}"
+      command: oc -n "{{ orchestrator_project }}"
                   start-build osbs-buildroot
       changed_when: true

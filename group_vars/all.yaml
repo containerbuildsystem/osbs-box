@@ -28,11 +28,11 @@ kubeadmin_pwd: changeme
 ocp_dev_account: "{{ ansible_user }}"
 ocp_dev_passwd: changeme
 
-# Namespacess for various OSBS-Box pieces
-koji_namespaces: "{{ ocp_dev_account }}-osbs-koji"
-orchestrator_namespaces: "{{ ocp_dev_account }}-osbs-orchestrator"
-worker_namespaces: "{{ ocp_dev_account }}-osbs-worker"
-registry_namespaces: "{{ ocp_dev_account }}-osbs-registry"
+# Projects for various OSBS-Box pieces
+koji_project: "{{ ocp_dev_account }}-osbs-koji"
+orchestrator_project: "{{ ocp_dev_account }}-osbs-orchestrator"
+worker_project: "{{ ocp_dev_account }}-osbs-worker"
+registry_project: "{{ ocp_dev_account }}-osbs-registry"
 
 
 ### Repositories and versions for OSBS components

@@ -5,7 +5,7 @@ openshift_required_version = 3.6.0
 
 [default]
 openshift_url = {{ openshift_api }}
-namespace = {{ orchestrator_namespace }}
+namespace = {{ orchestrator_project }}
 build_from = imagestream:osbs-buildroot:latest
 reactor_config_map = reactor-config-map
 build_type = prod
@@ -16,7 +16,7 @@ verify_ssl = false
 
 [scratch]
 openshift_url = {{ openshift_api }}
-namespace = {{ orchestrator_namespace }}
+namespace = {{ orchestrator_project }}
 build_from = imagestream:osbs-buildroot:latest
 reactor_config_map = reactor-config-map
 build_type = prod

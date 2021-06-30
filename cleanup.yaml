@@ -23,12 +23,12 @@
     - everything
 
   tasks:
-    - name: Delete koji namespace from openshift
-      command: oc delete namespace "{{ koji_namespace }}"
-      register: delete_koji_namespace
-      changed_when: delete_koji_namespace.rc == 0
-      failed_when: delete_koji_namespace.rc != 0 and
-                   'not found' not in delete_koji_namespace.stderr
+    - name: Delete koji project from openshift
+      command: oc delete project/"{{ koji_project }}"
+      register: delete_koji_project
+      changed_when: delete_koji_project.rc == 0
+      failed_when: delete_koji_project.rc != 0 and
+                   'cannot delete resource "projects"' not in delete_koji_project.stderr
       when: not oc_login.failed
 
 
@@ -40,33 +40,32 @@
     - everything
 
   tasks:
-    - name: Delete registry namespace from openshift
-      command: oc delete namespace "{{ registry_namespace }}"
-      register: delete_registry_namespace
-      changed_when: delete_registry_namespace.rc == 0
-      failed_when: delete_registry_namespace.rc != 0 and
-                   'not found' not in delete_registry_namespace.stderr
+    - name: Delete registry project from openshift
+      command: oc delete project/"{{ registry_project }}"
+      register: delete_registry_project
+      changed_when: delete_registry_project.rc == 0
+      failed_when: delete_registry_project.rc != 0 and
+                   'cannot delete resource "projects"' not in delete_registry_project.stderr
       when: not oc_login.failed
       ignore_errors: true
 
-
-- name: Delete OSBS orchestrator and worker namespaces
+- name: Delete OSBS orchestrator and worker projects
   hosts: localhost
   gather_facts: false
   tags:
-    - namespaces
+    - osbs
     - everything
 
   tasks:
-    - name: Delete orchestrator and worker namespaces from openshift
-      command: oc delete namespace "{{ item }}"
-      register: delete_osbs_namespace
-      changed_when: delete_osbs_namespace.rc == 0
-      failed_when: delete_osbs_namespace.rc != 0 and
-                   'not found' not in delete_osbs_namespace.stderr
+    - name: Delete orchestrator and worker projects from openshift
+      command: oc delete project/"{{ item }}"
+      register: delete_osbs_project
+      changed_when: delete_osbs_project.rc == 0
+      failed_when: delete_osbs_project.rc != 0 and
+                   'cannot delete resource "projects"' not in delete_osbs_project.stderr
       loop:
-        - "{{ orchestrator_namespace }}"
-        - "{{ worker_namespace }}"
+        - "{{ orchestrator_project }}"
+        - "{{ worker_project }}"
       when: not oc_login.failed
       ignore_errors: true
 
