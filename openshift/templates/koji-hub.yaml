@@ -25,6 +25,10 @@ parameters:
     value: localhost
     required: true
 
+  - name: OCP_USER
+    description: OCP username to prefix PVCs with
+    required: true
+
 labels:
   app: koji-hub
 
@@ -94,7 +98,7 @@ objects:
           volumes:
             - name: koji-files
               persistentVolumeClaim:
-                claimName: koji-files
+                claimName: ${OCP_USER}-koji-files
       triggers:
         - type: ImageChange
           imageChangeParams:
@@ -125,7 +129,7 @@ objects:
     metadata:
       name: koji-hub
     spec:
-      host: koji-hub.${OSBS_BOX_HOST}
+      host: koji-hub.${OCP_USER}.${OSBS_BOX_HOST}
       to:
         kind: Service
         name: koji-hub

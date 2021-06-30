@@ -19,6 +19,10 @@ parameters:
     value: master
     required: true
 
+  - name: OCP_USER
+    description: OCP username to prefix PVCs with
+    required: true
+
 labels:
   app: koji-db
 
@@ -91,7 +95,7 @@ objects:
           volumes:
             - name: koji-db-data
               persistentVolumeClaim:
-                claimName: koji-db-data
+                claimName: ${OCP_USER}-koji-db-data
       triggers:
         - type: ImageChange
           imageChangeParams:

@@ -58,7 +58,7 @@
         - "DNS:localhost"   # Same pod
         - "DNS:koji-hub"  # Different pod in the same namespace
         - "DNS:koji-hub.{{ koji_namespace }}"   # Pod in different namespace
-        - "DNS:koji-hub.{{ osbs_box_host }}"  # External route
+        - "DNS:koji-hub.{{ ocp_dev_account }}.{{ osbs_box_host }}"  # External route
     - name: kojiweb
     - name: kojibuilder
     - name: kojiadmin
@@ -100,7 +100,7 @@
         - "DNS:localhost"
         - "DNS:osbs-registry"
         - "DNS:osbs-registry.{{ registry_namespace }}"
-        - "DNS:osbs-registry.{{ osbs_box_host }}"
+        - "DNS:osbs-registry.{{ ocp_dev_account }}.{{ osbs_box_host }}"
     ca:
       crt_path: "{{ certificates_dir }}/osbs-box-ca.crt"
       key_path: "{{ certificates_dir }}/osbs-box-ca.key"

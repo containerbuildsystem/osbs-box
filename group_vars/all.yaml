@@ -22,19 +22,19 @@ osbs_box_host: "{{ ansible_default_ipv4.address }}.nip.io"
 
 ### Openshift settings
 
-# URL of your openshift cluster, needs to be reachable from inside containers
-openshift_url: "https://{{ ansible_default_ipv4.address }}:8443"
-
+# *Your* Openshift credentials
+ocp_dev_account: "{{ ansible_user }}"
+ocp_dev_passwd: changeme
 # Openshift user that will be used to trigger builds (does not have to exist)
 # This user will be given cluster-admin privileges
 openshift_user: osbs
 openshift_password: osbs
 
-# Namespaces for various OSBS-Box pieces
-koji_namespace: osbs-koji
-orchestrator_namespace: osbs-orchestrator
-worker_namespace: osbs-worker
-registry_namespace: osbs-registry
+# Namespacess for various OSBS-Box pieces
+koji_namespaces: "{{ ocp_dev_account }}-osbs-koji"
+orchestrator_namespaces: "{{ ocp_dev_account }}-osbs-orchestrator"
+worker_namespaces: "{{ ocp_dev_account }}-osbs-worker"
+registry_namespaces: "{{ ocp_dev_account }}-osbs-registry"
 
 
 ### Repositories and versions for OSBS components

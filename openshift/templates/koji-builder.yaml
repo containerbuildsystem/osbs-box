@@ -20,6 +20,10 @@ parameters:
     value: master
     required: true
 
+  - name: OCP_USER
+    description: OCP username to prefix PVCs with
+    required: true
+
 labels:
   app: koji-builder
 
@@ -84,7 +88,7 @@ objects:
           volumes:
             - name: koji-files
               persistentVolumeClaim:
-                claimName: koji-files
+                claimName: ${OCP_USER}-koji-files
       triggers:
         - type: ImageChange
           imageChangeParams:

@@ -20,6 +20,10 @@ parameters:
     description: Local directory for koji-db postgresql data
     required: true
 
+  - name: OCP_USER
+    description: OCP username to prefix PVCs with
+    required: true
+
 labels:
   volume: koji-volume
 
@@ -55,7 +59,7 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: koji-files
+      name: ${OCP_USER}-koji-files
     spec:
       volumeName: koji-files
       accessModes:
@@ -67,7 +71,7 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: koji-db-data
+      name: ${OCP_USER}-koji-db-data
     spec:
       volumeName: koji-db-data
       accessModes:

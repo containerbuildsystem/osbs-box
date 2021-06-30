@@ -18,6 +18,10 @@ parameters:
     value: localhost
     required: true
 
+  - name: OCP_USER
+    description: OCP username to prefix PVCs with
+    required: true
+
 labels:
   app: osbs-registry
 
@@ -38,7 +42,7 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: registry-data
+      name: ${OCP_USER}-registry-data
     spec:
       volumeName: registry-data
       accessModes:
@@ -83,7 +87,7 @@ objects:
           volumes:
             - name: registry-data
               persistentVolumeClaim:
-                claimName: registry-data
+                claimName: ${OCP_USER}-registry-data
             - name: registry-cert
               secret:
                 secretName: registry-cert
@@ -105,7 +109,7 @@ objects:
     metadata:
       name: osbs-registry
     spec:
-      host: osbs-registry.${OSBS_BOX_HOST}
+      host: osbs-registry.${OCP_USER}.${OSBS_BOX_HOST}
       to:
         kind: Service
         name: osbs-registry
