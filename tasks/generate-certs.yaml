@@ -67,6 +67,7 @@
 - block:
     - name: Combine private keys with koji certificates, save as .pem files
       assemble:
+        mode: 0660
         dest: "{{ koji_certs_dir }}/{{ item }}.pem"
         src: "{{ koji_certs_dir }}"
         regexp: "{{ item }}\\.(crt|key)"

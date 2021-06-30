@@ -1,5 +1,5 @@
 kind: Template
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 metadata:
   name: koji-base
   description: >
@@ -44,7 +44,7 @@ objects:
     spec: {}
 
   - kind: BuildConfig
-    apiVersion: v1
+    apiVersion: build.openshift.io/v1
     metadata:
       name: koji-base
     spec:

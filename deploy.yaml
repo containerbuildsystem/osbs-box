@@ -6,6 +6,7 @@
   tasks:
     - name: Make sure certificate directories exist
       file:
+        mode: 0700
         path: "{{ item }}"
         state: directory
       loop:
@@ -39,11 +40,13 @@
 
     - name: Make sure directory for openshift files exists
       file:
+        mode: 0700
         path: "{{ openshift_files }}"
         state: directory
 
     - name: Process parameters file and put it in openshift files dir
       template:
+        mode: 0660
         src: openshift/params/osbs-box.env.j2
         dest: "{{ openshift_files }}/osbs-box.env"
 
@@ -84,7 +87,7 @@
           --docker-username="{{ docker_id }}"
           --docker-password="{{ docker_password }}"
           --docker-email="{{ docker_email }}"
-          --dry-run
+          --dry-run=client
           --output json |
         oc --namespace "{{ item }}" replace --force -f -
       loop:
@@ -133,13 +136,14 @@
             --from-file "{{ koji_certs_dir }}/kojibuilder.pem"
             --from-file "{{ koji_certs_dir }}/kojiadmin.pem"
             --from-file "{{ koji_certs_dir }}/kojiosbs.pem"
-            --dry-run
+            --dry-run=client
             --output json |
         oc --namespace "{{ koji_namespace }}" replace --force -f -
       changed_when: true
 
     - name: Process koji config templates, output in openshift files dir
       template:
+        mode: 0660
         src: "openshift/configs/{{ item }}.j2"
         dest: "{{ openshift_files }}/{{ item }}"
       loop:
@@ -151,7 +155,7 @@
         set -o pipefail;
         oc create configmap "{{ item.name }}"
             --from-file "{{ item.dest }}={{ openshift_files }}/{{ item.src }}"
-            --dry-run
+            --dry-run=client
             --output json |
         oc --namespace "{{ koji_namespace }}" replace --force -f -
       changed_when: true
@@ -166,6 +170,7 @@
 
     - name: Copy openshift templates for koji components to openshift files dir
       copy:
+        mode: 0660
         src: "openshift/templates/{{ item }}.yaml"
         dest: "{{ openshift_files }}/{{ item }}.yaml"
       loop:
@@ -216,7 +221,7 @@
         oc create secret generic registry-cert
             --from-file "{{ registry_certs_dir }}/osbs-registry.crt"
             --from-file "{{ registry_certs_dir }}/osbs-registry.key"
-            --dry-run
+            --dry-run=client
             --output json |
         oc --namespace "{{ registry_namespace }}" replace --force -f -
       changed_when: true
@@ -235,6 +240,7 @@
 
     - name: Copy osbs-registry template to openshift files dir
       copy:
+        mode: 0660
         src: openshift/templates/osbs-registry.yaml
         dest: "{{ openshift_files }}/osbs-registry.yaml"
 
@@ -277,7 +283,7 @@
             --from-file "cert={{ koji_certs_dir }}/kojiosbs.pem"
             --from-file "ca={{ certificates_dir }}/osbs-box-ca.crt"
             --from-file "serverca={{ certificates_dir }}/osbs-box-ca.crt"
-            --dry-run
+            --dry-run=client
             --output json |
         oc --namespace "{{ item }}" replace --force -f -
       changed_when: true
@@ -296,6 +302,7 @@
 
     - name: Process orchestrator config templates, output in openshift files dir
       template:
+        mode: 0660
         src: "openshift/configs/{{ item }}.j2"
         dest: "{{ openshift_files }}/{{ item }}"
       loop:
@@ -307,7 +314,7 @@
         set -o pipefail;
         oc create configmap reactor-config-map
           --from-file "config.yaml={{ openshift_files }}/reactor-config-map.yaml"
-          --dry-run
+          --dry-run=client
           --output json |
         oc --namespace "{{ orchestrator_namespace }}" replace --force -f -
       changed_when: true
@@ -317,7 +324,7 @@
         set -o pipefail;
         oc create secret generic client-config-secret
           --from-file "osbs.conf={{ openshift_files }}/client-config-secret.conf"
-          --dry-run
+          --dry-run=client
           --output json |
         oc --namespace "{{ orchestrator_namespace }}" replace --force -f -
       changed_when: true
@@ -344,6 +351,7 @@
   tasks:
     - name: Copy osbs-buildroot template to openshift files dir
       copy:
+        mode: 0660
         src: openshift/templates/osbs-buildroot.yaml
         dest: "{{ openshift_files }}/osbs-buildroot.yaml"
 

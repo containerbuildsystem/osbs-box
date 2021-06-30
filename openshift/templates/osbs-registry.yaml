@@ -1,5 +1,5 @@
 kind: Template
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 metadata:
   name: osbs-registry
   description: >
@@ -48,7 +48,7 @@ objects:
           storage: 100Gi
 
   - kind: DeploymentConfig
-    apiVersion: v1
+    apiVersion: apps.openshift.io/v1
     metadata:
       name: osbs-registry
     spec:
@@ -101,7 +101,7 @@ objects:
           targetPort: 5000
 
   - kind: Route
-    apiVersion: v1
+    apiVersion: route.openshift.io/v1
     metadata:
       name: osbs-registry
     spec:
