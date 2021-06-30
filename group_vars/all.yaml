@@ -1,6 +1,11 @@
 ---
 ### General settings
 
+# URL of the host running OSBS-Box.
+# External routes for OSBS-Box components will use the following scheme:
+#   <name of service>.$osbs_box_host
+osbs_box_host: "apps-crc.testing"
+
 # OSBS-Box repository and version (branch, tag or commit ID)
 # Used by OpenShift when building images
 osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
@@ -11,16 +16,13 @@ docker_id: mylogin
 docker_password: changeme
 docker_email: foo@bar.com
 
-# URL of the host running OSBS-Box, see https://nip.io/.
-# External routes for OSBS-Box components will use the following scheme:
-#   <name of service>.$osbs_box_host
-# NOTE:
-#   You *can* use localhost here if you are using OSBS-Box locally, however,
-#   doing so will make external URLs unreachable from inside containers.
-osbs_box_host: "{{ ansible_default_ipv4.address }}.nip.io"
+### OpenShift settings
 
+# URL of your OpenShift cluster, needs to be reachable from inside containers
+openshift_api: "https://api.crc.testing:6443"
 
-### Openshift settings
+# Cluster admin password
+kubeadmin_pwd: changeme
 
 # *Your* Openshift credentials
 ocp_dev_account: "{{ ansible_user }}"

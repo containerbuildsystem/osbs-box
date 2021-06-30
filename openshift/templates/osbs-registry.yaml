@@ -27,9 +27,9 @@ objects:
     metadata:
       name: ${OCP_USER}-registry-data
     spec:
-      volumeName: registry-data
       accessModes:
-        - ReadWriteOnce
+        - ReadWriteMany
+      volumeMode: Filesystem
       resources:
         requests:
           storage: 100Gi

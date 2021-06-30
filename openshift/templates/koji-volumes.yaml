@@ -25,9 +25,9 @@ objects:
     metadata:
       name: ${OCP_USER}-koji-files
     spec:
-      volumeName: koji-files
       accessModes:
-        - ReadWriteOnce
+        - ReadWriteMany
+      volumeMode: Filesystem
       resources:
         requests:
           storage: 100Gi
@@ -37,9 +37,9 @@ objects:
     metadata:
       name: ${OCP_USER}-koji-db-data
     spec:
-      volumeName: koji-db-data
       accessModes:
-        - ReadWriteOnce
+        - ReadWriteMany
+      volumeMode: Filesystem
       resources:
         requests:
           storage: 100Gi

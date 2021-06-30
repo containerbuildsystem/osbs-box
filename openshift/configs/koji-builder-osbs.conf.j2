@@ -4,7 +4,7 @@ verbose = 1
 openshift_required_version = 3.6.0
 
 [default]
-openshift_url = {{ openshift_url }}
+openshift_url = {{ openshift_api }}
 namespace = {{ orchestrator_namespace }}
 build_from = imagestream:osbs-buildroot:latest
 reactor_config_map = reactor-config-map
@@ -15,7 +15,7 @@ use_kerberos = false
 verify_ssl = false
 
 [scratch]
-openshift_url = {{ openshift_url }}
+openshift_url = {{ openshift_api }}
 namespace = {{ orchestrator_namespace }}
 build_from = imagestream:osbs-buildroot:latest
 reactor_config_map = reactor-config-map
