@@ -2,12 +2,14 @@
 ### General settings
 
 # OSBS-Box repository and version (branch, tag or commit ID)
-# Used by openshift when building images
+# Used by OpenShift when building images
 osbs_box_repo: https://github.com/containerbuildsystem/osbs-box
 osbs_box_version: master
 
-# Directory for keeping miscellanous osbs-box data
-osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
+# dockerhub.io account info
+docker_id: mylogin
+docker_password: changeme
+docker_email: foo@bar.com
 
 # URL of the host running OSBS-Box, see https://nip.io/.
 # External routes for OSBS-Box components will use the following scheme:
@@ -36,6 +38,7 @@ registry_namespace: osbs-registry
 
 
 ### Repositories and versions for OSBS components
+
 atomic_reactor_repo: https://github.com/containerbuildsystem/atomic-reactor
 atomic_reactor_version: master
 
@@ -54,7 +57,10 @@ dockpulp_version: master
 
 ### Data directories
 
-# Directory for openshift files (templates, params, configs)
+# Directory for keeping miscellanous osbs-box data
+osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
+
+# Directory for OpenShift files (templates, params, configs)
 openshift_files: "{{ osbs_box_data_dir }}/openshift"
 
 # Directories for certificates created by OSBS-Box
@@ -66,7 +72,3 @@ registry_certs_dir: "{{ certificates_dir }}/registry"
 koji_files_dir: "{{ osbs_box_data_dir }}/pv/koji-files"
 koji_db_data_dir: "{{ osbs_box_data_dir }}/pv/koji-db-data"
 registry_data_dir: "{{ osbs_box_data_dir }}/pv/registry-data"
-
-docker_id: mylogin
-docker_password: password-me
-docker_email: foo@bar.com
