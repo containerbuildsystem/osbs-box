@@ -31,8 +31,8 @@
     - openshift
 
   tasks:
-    - name: Login as openshift admin
-      command: oc login -u system:admin
+    - name: Login as openshift *USER*
+      command: oc login -u "{{ ocp_dev_account }}" -p "{{ ocp_dev_passwd }}" "{{ openshift_api }}"
       changed_when: true
 
     - name: Make sure directory for openshift files exists
@@ -54,6 +54,7 @@
   tags:
     - projects
     - openshift
+
   tasks:
     - name: Create the project
       command: oc new-project "{{ item }}"
@@ -66,6 +67,49 @@
         - "{{ registry_project }}"
         - "{{ orchestrator_project }}"
         - "{{ worker_project }}"
+
+
+- name: Kubeadmin tasks
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - projects
+    - openshift
+  vars:
+    # This is a constant, please do not override
+    projects:
+      - "{{ orchestrator_project }}"
+      - "{{ worker_project }}"
+
+  tasks:
+    - name: Login as openshift *ADMIN*
+      command:
+        oc login -u kubeadmin -p "{{ kubeadmin_pwd }}" "{{ openshift_api }}"
+      changed_when: true
+
+    - name: Allow koji & registry containers to run as any user
+      command:
+        oc -n "{{ item }}" adm policy add-scc-to-user anyuid --serviceaccount default
+      changed_when: true
+      loop:
+        - "{{ koji_project }}"
+        - "{{ registry_project }}"
+
+    - name: Add necessary roles to builder serviceaccounts
+      command:
+        oc -n "{{ item.0 }}" adm policy add-role-to-user "{{ item.1 }}" -z builder
+      changed_when: true
+      loop:
+        "{{ projects | product(roles) | list }}"
+      vars:
+        roles:
+          - "edit"
+          - "system:build-strategy-custom"
+
+    - name: Drop privileges, Login as openshift *USER*
+      command:
+        oc login -u "{{ ocp_dev_account }}" -p "{{ ocp_dev_passwd }}" "{{ openshift_api }}"
+      changed_when: true
 
 
 - name: Set up dockerhub pull secret
@@ -184,12 +228,6 @@
       loop:
         "{{ koji_components }}"
 
-    - name: Allow koji containers to run as any user
-      command:
-        oc --namespace "{{ koji_namespace }}" adm policy add-scc-to-user anyuid
-           --serviceaccount default
-      changed_when: true
-
     - name: Build (and automatically deploy) koji components
       command: oc -n "{{ koji_project }}" start-build koji-base
       changed_when: true
@@ -212,12 +250,6 @@
             --dry-run=client
             --output json |
         oc -n "{{ registry_project }}" replace --force -f -
-      changed_when: true
-
-    - name: Allow registry container to run as any user
-      command:
-        oc --namespace "{{ registry_namespace }}" adm policy add-scc-to-user
-           anyuid --serviceaccount default
       changed_when: true
 
     - name: Copy osbs-registry template to openshift files dir
@@ -311,17 +343,6 @@
           --output json |
         oc -n "{{ orchestrator_project }}" replace --force -f -
       changed_when: true
-
-    - name: Add necessary roles to builder serviceaccounts
-      command: oc --namespace "{{ item.0 }}" adm policy
-                  add-role-to-user "{{ item.1 }}" -z builder
-      changed_when: true
-      loop:
-        "{{ projects | product(roles) | list }}"
-      vars:
-        roles:
-          - "edit"
-          - "system:build-strategy-custom"
 
 
 - name: Build OSBS buildroot

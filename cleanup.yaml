@@ -5,8 +5,8 @@
     - always
 
   tasks:
-    - name: Try to log in as openshift admin
-      command: oc login -u system:admin
+    - name: Log in to OpenShift
+      command: oc login -u "{{ ocp_dev_account }}" -p "{{ ocp_dev_passwd }}" "{{ openshift_api }}"
       register: oc_login
       changed_when: oc_login.rc == 0
       # If login failed, cluster is probably down - that means steps which use
