@@ -35,11 +35,6 @@
       command: oc login -u system:admin
       changed_when: true
 
-    - name: Make "{{ openshift_user }}" an openshift cluster admin
-      command: oc adm policy add-cluster-role-to-user
-                  cluster-admin "{{ openshift_user }}"
-      changed_when: true
-
     - name: Make sure directory for openshift files exists
       file:
         mode: 0700

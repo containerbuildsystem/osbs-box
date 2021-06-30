@@ -25,10 +25,6 @@ osbs_box_host: "{{ ansible_default_ipv4.address }}.nip.io"
 # *Your* Openshift credentials
 ocp_dev_account: "{{ ansible_user }}"
 ocp_dev_passwd: changeme
-# Openshift user that will be used to trigger builds (does not have to exist)
-# This user will be given cluster-admin privileges
-openshift_user: osbs
-openshift_password: osbs
 
 # Namespacess for various OSBS-Box pieces
 koji_namespaces: "{{ ocp_dev_account }}-osbs-koji"
