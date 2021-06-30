@@ -42,6 +42,7 @@
                     delete_koji_pvs.stdout != 'No resources found'
       failed_when: delete_koji_pvs.rc != 0
       when: not oc_login.failed
+      ignore_errors: true
 
 
 - name: Delete docker registry
@@ -61,6 +62,7 @@
       failed_when: delete_registry_namespace.rc != 0 and
                    'not found' not in delete_registry_namespace.stderr
       when: not oc_login.failed
+      ignore_errors: true
 
     - name: Delete registry PV from openshift
       command: oc delete pv registry-data
@@ -89,7 +91,7 @@
         - "{{ orchestrator_namespace }}"
         - "{{ worker_namespace }}"
       when: not oc_login.failed
-
+      ignore_errors: true
 
 - name: Delete persistent volume data
   hosts: osbs_box_host
