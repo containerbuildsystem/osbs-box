@@ -1,5 +1,6 @@
 - name: Generate certificates for OSBS-Box
-  hosts: osbs_box_host
+  hosts: localhost
+  gather_facts: false
   tags:
     - certificates
 
@@ -19,7 +20,8 @@
 
 
 - name: Prepare for deployment of openshift applications
-  hosts: osbs_box_host
+  hosts: localhost
+  gather_facts: false
   tags:
     - koji
     - registry
@@ -53,6 +55,7 @@
 
 - name: Create all projects (namespaces)
   hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - namespaces
@@ -72,7 +75,7 @@
 
 
 - name: Set up dockerhub pull secret
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - pull_secret
@@ -109,7 +112,7 @@
 
 
 - name: Run koji containers on openshift
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   vars:
     # This is a constant, please do not override
@@ -208,7 +211,7 @@
 
 
 - name: Run registry container on openshift
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - registry
@@ -265,7 +268,7 @@
 
 
 - name: Set up OSBS orchestrator and worker projects
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   vars:
     # This is a constant, please do not override
@@ -343,7 +346,7 @@
 
 
 - name: Build OSBS buildroot
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - buildroot

@@ -58,7 +58,7 @@ dockpulp_version: master
 ### Data directories
 
 # Directory for keeping miscellanous osbs-box data
-osbs_box_data_dir: "{{ ansible_env.HOME }}/.local/share/osbs-box"
+osbs_box_data_dir: "{{ lookup('env','HOME') }}/.local/share/osbs-box"
 
 # Directory for OpenShift files (templates, params, configs)
 openshift_files: "{{ osbs_box_data_dir }}/openshift"

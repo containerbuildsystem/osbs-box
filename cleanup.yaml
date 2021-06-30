@@ -1,5 +1,6 @@
 - name: Prepare for cleanup
-  hosts: osbs_box_host
+  hosts: localhost
+  gather_facts: false
   tags:
     - always
 
@@ -14,7 +15,7 @@
 
 
 - name: Delete koji
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - koji
@@ -46,7 +47,7 @@
 
 
 - name: Delete docker registry
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - registry
@@ -74,7 +75,7 @@
 
 
 - name: Delete OSBS orchestrator and worker namespaces
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - namespaces
@@ -128,7 +129,7 @@
 
 
 - name: Delete remaining OSBS-Box data
-  hosts: osbs_box_host
+  hosts: localhost
   gather_facts: false
   tags:
     - never
