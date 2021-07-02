@@ -1,209 +1,191 @@
 # OSBS-Box
 
 An OpenShift based project that provides an environment for testing OSBS
-components; it can be deployed locally using the [example inventory][].
+components.
 
-## Basic usage
+OSBS-Box for OpenShift 4.x is *not* intended to run locally, and assumes a
+multi-tenant cluster, to which you have cluster admin credentials, and which
+either *has* Filesystem-capable PVs, or can be so configured.
 
-Run a simple container build on your OSBS-Box:
+Basic usage is described [below](#basic-usage)
 
-```shell
-$ # If running remotely, first log in to the OpenShift server or ssh into the remote machine
-$ oc login --server https://<IP address>:8443 -u osbs -p osbs
+## Requirements
 
-$ # Get URL of container registry
-$ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
+- Locally (on your laptop/desktop)
+  - Python >= 3.6
+  - Ansible >= 2.9
+  - sshd (e.g. from the 'openssh-server' RPM) installed/configured/running
+  - A working `oc` (e.g. from the 'openshift-clients' RPM, but I *highly*
+    recommend manually downloading it from [cloud.redhat.com][], as the RPM
+    version is *very* old)
+- A working OCP 4.x cluster, on which you have an account. CRC (
+  [CodeReady Containers][]; basically the OS 4 equivalent of OS 3’s `oc cluster`,
+  i.e. a single-node development cluster) has been tested and should work, as
+  should any "normal" OCP cluster hosted pretty much anywhere. **NOTE** that
+  cluster admin access is ***required***
 
-$ # Copy base image for container build to registry
-$ skopeo copy docker://registry.fedoraproject.org/fedora:30 \
-              docker://${OSBS_REGISTRY}/fedora:30 \
-              --all \
-              --dest-tls-verify=false
+In the examples given throughout this doc, I'll use CRC-specific values instead
+of placeholders, to help make things more concrete, and similarly, I'll use my
+username ('balkov') as the value for $USER.
 
-$ # Run koji container-build
-$ oc -n osbs-koji rsh dc/koji-client \
-      koji container-build candidate \
-          git://github.com/chmeliik/docker-hello-world#origin/osbs-box-basic \
-          --git-branch osbs-box-basic
-```
+## Assumptions
 
-When logging into the server, you will likely need to use the
-`--insecure-skip-tls-verify` flag.
+- The `oc` command is  available **locally**
+- A working OpenShift 4 cluster is readily available to deploy into
 
-If your version of `skopeo` does not support the `--all` flag, you might want to
-use `skopeo-lite` instead ([more on that][]).
+  This can be an OpenShift 4 cluster running in someone’s cloud, on baremetal in
+  your basement, or in a VM somewhere which is hosting CRC (I would *avoid*
+  trying to run CRC locally - its resource requirements are very high)
+- You have a user account therein
+- **You have access to cluster admin credentials** (unfortunately)
+- Given that we might deploy into a running cluster somewhere, we want to be a
+  good neighbor. OSBS-Box will create Projects prefixed with (local)
+  $USER, to avoid conflicts with existing Projects/Namespaces (you’ll need to
+  put your OpenShift account name in [inventory.ini][] if it differs from $USER).
+  This makes it possible for a team which is using a shared OpenShift 4 dev
+  environment to run multiple deployments of OSBS in parallel.
+- Backing storage is *not* created/configured. Simple Filesystem PVCs are
+  requested, so if you don’t already have PVs which can provide that, you will
+  need to set some up. Note that CRC provides 30 100G PVs by default.
+
+Everything is already configured to deploy to a default configured CRC cluster
+instance. Cloning this repo as it stands and running the playbooks against a CRC
+cluster should Just Work.
+
+## Pre steps
+
+- `git clone` this repository
+- In an 'overrides.yaml' file, you will need
+  - For the OCP cluster
+    - 'osbs_box_host': Locally-resolvable hostname
+    - 'openshift_api': API URL
+
+    CodeReady Containers is the default, i.e. with
+    - `osbs_box_host: "apps-crc.testing"`
+    - `openshift_api: "https://api.crc.testing:6443"`
+
+  - 'kubeadmin_pwd': The password for `kubeadmin`, or another cluster admin.
+    **There's no way to work around this requirement**
+  - 'ocp_dev_account': (optional) Your OCP account name, **if** it differs from your
+    local username
+  - 'ocp_dev_passwd': Your OCP account password
+  - Your dockerhub credentials as noted in [dockerhub.md][]. You *must* have a
+      [Docker Hub] account of some kind to avoid hourly limits on image pulls.
+      Depending on how you use OSBS Box, you *might* require a paid account, as
+      you *might* even hit the free account's limit.
+- ansible *might* require an initial ssh login to localhost (use '-k' option)
 
 ## Deployment
 
-OSBS-Box is primarily intended for use with OpenShift clusters created using
-`oc cluster up`.
+- Run `ansible-playbook deploy.yaml -i inventory.ini -e @overrides.yaml`
 
-Setting one up should be as simple as:
+  If you are **sure** that you do not need to re-generate certificates, use
+  `--tags=openshift`
 
-```shell
-dnf install origin-clients
-oc cluster up
-```
-
-For more details, refer to [cluster_up_down.md][].
-
-### Prerequisites
-
-- **On the target machine**
-  - ansible >= 2.8
-  - pyOpenSSL >= 0.15 (for the `openssl_*` ansible modules)
-  - an OpenShift cluster, as described above
-
-- **Detailed prerequisites on a Fedora 32 target machine**
-
-  - see [Fedora32.md][]
-
-- **Note about Docker Hub (docker.io image registry)**
-
-  - You *must* have a [Docker Hub] account of some kind for pulling necessary
-    images. Depending on how you use OSBS Box, you *might* require a paid account,
-    as you *might* hit the free account's hourly limit on image pulls.
-  - Consult [dockerhub.md][] for more details.
-
-### Deployment steps
-
-1. If you haven't already, `git clone` this repository
-1. Take a look at [group_vars/all.yaml][]<sup id="a1">[1](#f1)</sup>
-1. You **MUST** override the 'docker_*' group vars in a YAML file, and provide
-   that file to the ansible-playbook command via (e.g.) `-e @overrides.yaml`.
-   Consult [dockerhub.md][] for more details. (Note that the '@' *is a necessary
-   part of the command*)
-1. Provide an inventory file, or use the example one
-1. Run `ansible-playbook deploy.yaml -i <inventory file>`
-
-   If you are sure that you do not need to re-generate certificates, use
-   `--tags=openshift`
+  Modifications to the inventory file are possible, but not necessary.
 
 **NOTE**: [deploy.yaml][] only starts the build, it does not wait for the entire
-deployment to finish. You can check the deployment status in the web console or
-with `oc status`.
+deployment to finish. You can check the deployment status from the OpenShift web
+console. You can also check from the command line with e.g.
+`oc -n balkov-osbs-koji get pod` for the specified Project, which will give you e.g.
 
-## Using OSBS-Box
+```bash
+NAME                   READY   STATUS      RESTARTS   AGE
+koji-base-1-build      0/1     Completed   0          9m11s
+koji-builder-1-build   1/1     Running     0          4m56s
+koji-client-1-build    1/1     Running     0          4m56s
+koji-db-1-build        0/1     Completed   0          4m56s
+koji-db-1-deploy       0/1     Completed   0          56s
+koji-db-1-h78vj        1/1     Running     0          51s
+koji-hub-1-build       1/1     Running     0          4m56s
+```
 
-During deployment, the OpenShift user specified in [group_vars/all.yaml][]
-will be given cluster admin privileges. This is the user you are going to want
-to log in as from the web console / CLI.
+and then stream logs from a specific pod with e.g.
+`oc -n balkov-osbs-koji logs -f=true koji-builder-1-build`
 
-### OpenShift console
+## Basic usage
 
-Located at <https://localhost:8443/console> by default (if running locally).
+TBD; wating on OSBS Reimagined
 
-You will see all the OSBS-Box namespaces here (by default, they are called
-`osbs-*`). After entering a namespace, you will see all the running pods, you
-can view their logs, open terminals in them etc.
+### Useage; a closer look
 
-### OpenShift CLI
+#### OpenShift console
+
+Consult your cluster's docs or admin to find the console URL. e.g. for CRC it is
+'console-openshift-console.apps-crc.testing'.
+
+You should see all the OSBS-Box Projects here (by default, they are called
+`$USER-osbs-*`). After entering a Project, you can see all the running pods,
+view their logs, open terminals etc.
+
+#### OpenShift CLI
 
 Generally, anything you can do in the console, you can do with `oc`. Just make
 sure you are logged into the server and in the right project.
 
 To run a command in a container from the command line (for example, `koji hello`
-on the client):
+on koji client):
 
 ```shell
-oc login --server <server> -u osbs -p osbs  # If not yet logged in
+oc login -u balkov -p FOO https://api.crc.testing:6443  # If not yet logged in
+oc project balkov-osbs-koji  # If not in the koji project
 oc rsh dc/koji-client koji hello  # dc is short for deploymentconfig
-oc -n osbs-koji rsh dc/koji-client koji hello  # From a project other than osbs-koji
+oc -n balkov-osbs-koji rsh dc/koji-client koji hello  # From a project other than balkov-osbs-koji
 ```
 
 Use
 
-`oc rsh <pod name>`
+`oc -n <relevant-project> rsh <pod name>`
 
 or
 
-`oc rsh <pod name> bash`
+`oc -n <relevant-project> rsh <pod name> bash`
 
 to open a remote shell in the specified pod.
 
-### Koji website
+It's important to stay aware of which Project is current. Always providing the
+Project name using `-n` takes extra typing, but doesn't hurt anything.
+
+#### Koji website
 
 The koji-hub OpenShift app provides an external route where you can access the
-koji website. You can find the URL in the console or with
-`oc get route koji-hub`. Here, you can view information about your Koji instance.
+koji website. You can find the URL in the console or with e.g.
+`oc -n balkov-osbs-koji get route koji-hub`. Here, you can view information
+about your Koji instance.
 
-To log in to the website, you will first need to import a client certificate
-into your browser. These certificates are generated during deployment and can be
-found in the koji certificates directory on the target machine
-(`~/.local/share/osbs-box/certificates/koji/` by default). There is one for
-each koji user (by default, only `kojiadmin` and `kojiosbs` are users, but
-logging in creates a user automatically).
+To log in to the koji-hub website, you will first need to import a client
+certificate into your browser (e.g. in Firefox, the "Your Certificates" tab of
+the Certificate Manager). These certificates are generated during deployment and
+can be found in the koji certificates directory on the target machine
+(`~/.local/share/osbs-box/certificates/koji/` by default). There is one for each
+koji user (by default, only `kojiadmin` and `kojiosbs` are users).
 
-### Koji CLI (local)
+#### Koji CLI (local)
 
 Coming soon ^TM^
 
-### Container registry
+#### Container registry
 
-OSBS-Box deploys a container registry for you. It is used both as the source
+OSBS-Box deploys a container registry for you. It is used as both the source
 registry for base images and the output registry for built images.
 
 You can access it just like any other container registry using its external
-route. You can find the URL in the console or with `oc get route osbs-registry`.
+route. You can find the URL in the console or with e.g.
+`oc -n balkov-osbs-registry get route osbs-registry`.
 
 Since the certificate used for the registry is signed by our own, untrusted CA,
 the registry is considered insecure.
 
-Use the following to access the registry, depending on your tool
+Use the following to access the registry locally, depending on your tool
 
 - `docker`
   - Add the registry URL to `insecure-registries` in '/etc/docker/daemon.json'
-            and restart docker
+    and restart docker
 - `podman`
   - Use the `--tls-verify=false` option
 - `skopeo`
   - Use the `--tls-verify=false` option (or `--(src|dest)-tls-verify=false` for
     copying)
-
-### Skopeo-lite
-
-**NOTE**: Starting with `skopeo` release `v0.1.40`, the `copy` command comes
-with an `--all` flag, which makes skopeo also copy manifest lists. That renders
-`skopeo-lite` obsolete.
-
-Prior to `v0.1.40`, `skopeo` would not copy manifest lists. Builds may work even
-with base images missing manifest lists, but they will not use the related OSBS
-features.
-
-For this purpose, OSBS-Box provides a `skopeo-lite` image.
-
-Use it with `podman`:
-
-```shell
-$ podman build skopeo-lite/ --tag skopeo-lite
-
-$ # Get URL of container registry
-$ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
-
-$ # Copy image to container registry
-$ podman run --rm -ti \
-      skopeo-lite copy docker://registry.fedoraproject.org/fedora:30 \
-                       docker://${OSBS_REGISTRY}/fedora:30 \
-                       --dest-tls-verify=false
-```
-
-Or `docker`:
-
-```shell
-$ docker build skopeo-lite/ --tag skopeo-lite
-
-$ # If you are on the target machine, you might need to use the registry IP instead
-$ OSBS_REGISTRY=$(oc -n osbs-registry get svc osbs-registry --output jsonpath='{ .spec.clusterIP }')
-
-$ # Otherwise, use the URL
-$ OSBS_REGISTRY=$(oc -n osbs-registry get route osbs-registry --output jsonpath='{ .spec.host }')
-
-$ # Copy image to container registry
-$ docker run --rm -ti \
-      skopeo-lite copy docker://registry.fedoraproject.org/fedora:30 \
-                       docker://${OSBS_REGISTRY}:5000/fedora:30 \
-                       --dest-tls-verify=false
-```
 
 ## Updating OSBS-Box
 
@@ -213,80 +195,51 @@ instance:
 1. Changes in OSBS-Box itself
 1. Changes in other OSBS components
 
-For case 1, your best bet is to rerun the entire deployment
+   For case 1, your best bet is to rerun the entire deployment
 
-```shell
-ansible-playbook deploy.yaml -i <inventory> -e <overrides>
-```
+   ```shell
+   ansible-playbook deploy.yaml -i inventory.ini -e @overrides.yaml
+   ```
 
-For case 2, usually you will only need
+   For case 2, usually you will only need
 
-```shell
-ansible-playbook deploy.yaml -i <inventory> -e <overrides> --tags=koji,buildroot
-```
+   ```shell
+   ansible-playbook deploy.yaml -i inventory.ini -e @overrides.yaml --tags=koji,buildroot
+   ```
 
 In fact, it might be desirable to run the update like this to avoid having any
 potential manual changes to the reactor config map overwritten. But if you are
 not sure, running the full playbook or at least `--tags=openshift` will work.
 
 **NOTE**: When working on OSBS-Box code, to test changes concerning any of the
-pieces used to build Docker images, you will need to **push the changes first**
-before running the playbook, because OpenShift gets the code for builds from
-git. Alternatively, instead of using the playbook, you can just `oc start-build
-{the component you changed} --from-dir .`.
+pieces used to build container images, you will need to **push the changes
+first** before running the playbook, because OpenShift gets the code for builds
+from git (you will almost certainly need to override 'osbs_box_repo' and
+'osbs_box_version', either directly in [group_vars/all.yaml][], or in
+'overrides.yaml'). Alternatively, instead of using the playbook, you can simply
+`oc start-build {the component you changed} --from-dir .`
 
 ## Cleaning up
 
 There are multiple reasons why you might want to clean up OSBS-Box data:
 
 - You need to reset your koji/registry instances to a clean state
-- For some reason, updating your OSBS-Box failed (and it is not because of the
-  code)
+- For some reason, updating your OSBS-Box failed (not due to code changes)
 - You are done with OSBS-Box (forever)
 
-OSBS-Box provides the **cleanup.yaml** playbook, which does parts of the cleanup
-for you based on what `--tags` you specify. In addition to tags related to
-OpenShift namespaces/applications, there are extra tags (not run by default)
-related to local data:
+OSBS-Box provides the [cleanup.yaml][] playbook, which does parts of the cleanup
+for you based on what `--tags` you specify. In addition to tags related to the
+OpenShiftProjects, there are extra tags (not run by default) related to local
+data:
 
 - `openshift_files`
   - OpenShift files (templates, configs) created during deployment
 - `certificates`
   - Certificates created during deployment
-- `pvs` (uses `sudo`; run playbook with `--ask-become-pass`)
-  - `registry_pv`
-    - PV for the container registry
-  - `koji_pvs`
-    - `koji_db_pv`
-      - koji database PV
-    - `koji_files_pv`
-      - PV used by koji-hub and koji-builder for `/mnt/koji/`
 
-When you run the playbook without any tags, all OSBS-Box OpenShift namespaces
-are deleted, this also kills the containers running in them. All other data is
-kept, including persistent volume directories. If you need to reset your
-instance to a clean state, you will likely want to use the `pvs` tag. To get rid
-of everything, use `everything`.
-
-You may also want to
-
-- Remove the docker images built/pulled by OpenShift
-
-  You will find them in your local registry, like normal docker images
-- Run `oc cluster down` and remove the data left behind by `oc cluster up`
-  - Volumes that were mounted by OpenShift and never unmounted
-
-    ```shell
-    findmnt -r -n -o TARGET | grep "openshift.local.clusterup" | xargs -r umount
-    ```
-
-  - The `openshift.local.clusterup` directory created when you ran
-    `oc cluster up` (or whatever you passed as the `--base-dir` param to
-    `oc cluster up`)
-
-## Project structure
-
-Coming soon ^TM^
+When you run the playbook without any tags, all OSBS-Box OpenShift Projects
+are deleted (this also kills the pods running in them). All other data is
+kept. To get rid of everything, use `everything`.
 
 ## Known issues
 
@@ -300,35 +253,20 @@ Coming soon ^TM^
     ```
 
   - Reproduce
-    1. Log in to the koji website as a user that is neither `kojiadmin` nor
-    `kojiosbs`
-    1. Bring koji down without logging out of the website
-    1. Remove koji database persistent data
-    1. Bring koji back up, go to the website
-    1. Congratulations, koji now thinks a non-existent user is logged in
+    - Log in to the koji website as a user that is neither `kojiadmin` nor
+      `kojiosbs`
+    - Bring koji down without logging out of the website
+    - Remove koji database persistent data
+    - Bring koji back up, go to the website
+    - Congratulations, koji now thinks a non-existent user is logged in
   - Solution
     - Clear cookies, reload website
-- Running deployment playbook triggers multiple deployments in OpenShift
-  - Problem
-    - For some reason, even though the DeploymentConfigs are configured to only
-      trigger deployments on imageChange, running the deployment playbook
-      against a running OSBS-Box instance triggers multiple re-deployments of
-      koji components
-  - Solution
-    - This is not a major issue, just do not be surprised when you see your koji
-      containers getting restarted 2 or 3 times after each deployment (except
-      for the initial deployment, that works fine)
 
----
-
-<b id="f1">1.</b> It's better to override group vars via `overrides.yaml` than
-to change the global configuration in [group_vars/all.yaml][] [↩](#a1)
-
-[example inventory]: ./inventory-example.ini
+[cleanup.yaml]: ./cleanup.yaml
+[cloud.redhat.com]: https://cloud.redhat.com/openshift/downloads
+[CodeReady Containers]: https://developers.redhat.com/products/codeready-containers
+[deploy.yaml]: ./deploy.yaml
 [Docker Hub]: https://hub.docker.com
 [dockerhub.md]: ./docs/dockerhub.md
-[more on that]: #Skopeo-lite
-[cluster_up_down.md]: https://github.com/openshift/origin/blob/release-3.11/docs/cluster_up_down.md
-[Fedora32.md]: ./docs/Fedora32.md
+[inventory.ini]: ./inventory.ini
 [group_vars/all.yaml]: ./group_vars/all.yaml
-[deploy.yaml]: ./deploy.yaml
