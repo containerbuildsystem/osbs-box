@@ -71,7 +71,7 @@ cluster should Just Work.
   - 'ocp_dev_passwd': Your OCP account password
   - Your dockerhub credentials as noted in [dockerhub.md][]. You *must* have a
       [Docker Hub] account of some kind to avoid hourly limits on image pulls.
-      Depending on how you use OSBS Box, you *might* require a paid account, as
+      Depending on how you use OSBS-Box, you *might* require a paid account, as
       you *might* even hit the free account's limit.
 - ansible *might* require an initial ssh login to localhost (use '-k' option)
 
@@ -102,6 +102,16 @@ koji-hub-1-build       1/1     Running     0          4m56s
 
 and then stream logs from a specific pod with e.g.
 `oc -n balkov-osbs-koji logs -f=true koji-builder-1-build`
+
+It might take a while for everything to build and settle - give it time (10
+minutes or so). In the event of massive or inexplicable failure, simply start
+over with
+
+```shell
+ansible-playbook cleanup.yaml -i inventory.ini -e @overrides.yaml --tags=everything
+```
+
+and run the 'deploy.yaml' playbook again
 
 ## Basic usage
 
@@ -189,32 +199,43 @@ Use the following to access the registry locally, depending on your tool
 
 ## Updating OSBS-Box
 
-In general, there are two reasons why you might want to update your OSBS-Box
-instance:
+In general, there are *very few* reasons why you'd want to try to update your
+OSBS-Box instance:
 
-1. Changes in OSBS-Box itself
-1. Changes in other OSBS components
-
-   For case 1, your best bet is to rerun the entire deployment
-
-   ```shell
-   ansible-playbook deploy.yaml -i inventory.ini -e @overrides.yaml
-   ```
-
-   For case 2, usually you will only need
+1. Changes in OSBS-Box itself - it's unlikely you'd want to re-deploy simply
+   because of this, *unless* you're doing development work on OSBS-Box itself,
+   in which case you'll want to destroy the existing OSBS deploy with
 
    ```shell
-   ansible-playbook deploy.yaml -i inventory.ini -e @overrides.yaml --tags=koji,buildroot
+   ansible-playbook cleanup.yaml -i inventory.ini -e @overrides.yaml --tags=everything
    ```
 
-In fact, it might be desirable to run the update like this to avoid having any
-potential manual changes to the reactor config map overwritten. But if you are
-not sure, running the full playbook or at least `--tags=openshift` will work.
+   and re-deploy from scratch.
+1. Changes in OSBS components
 
-**NOTE**: When working on OSBS-Box code, to test changes concerning any of the
-pieces used to build container images, you will need to **push the changes
-first** before running the playbook, because OpenShift gets the code for builds
-from git (you will almost certainly need to override 'osbs_box_repo' and
+   Simply trigger a new build in the orchestrator Project (i.e.
+   your_userid-osbs-orchestrator/buildconfigs/osbs-buildroot) - there's no need
+   to update anything else
+1. Changes *specifically* in the koji-containerbuild plugin
+
+   See [koji-c.md][] regarding manually deploying the koji-c plugin. The
+   headaches incurred via re-deploying all of koji, only for the purpose of
+   updating the koji-c plugin, aren't worth it.
+1. Changes to reactor-config-map
+
+   It's more efficient to simply make the changes manually in the orchestrator
+   Project's reactor-config-map
+   (your_userid-osbs-orchestrator/configmaps/reactor-config-map)
+
+1. Changes to other configs
+
+   In this one instance, it might be better to incorporate changes into your
+   local clone of this repo and then re-deploy with `--tags=osbs`
+
+**NOTE** when working on OSBS-Box' code itself: To test changes concerning any
+of the pieces used to build container images, you will need to **push the
+changes first** before running the playbook, because OpenShift gets the code for
+builds from git (you will almost certainly need to override 'osbs_box_repo' and
 'osbs_box_version', either directly in [group_vars/all.yaml][], or in
 'overrides.yaml'). Alternatively, instead of using the playbook, you can simply
 `oc start-build {the component you changed} --from-dir .`
@@ -268,5 +289,6 @@ kept. To get rid of everything, use `everything`.
 [deploy.yaml]: ./deploy.yaml
 [Docker Hub]: https://hub.docker.com
 [dockerhub.md]: ./docs/dockerhub.md
-[inventory.ini]: ./inventory.ini
 [group_vars/all.yaml]: ./group_vars/all.yaml
+[inventory.ini]: ./inventory.ini
+[koji-c.md]: ./docs/koji-c.md
